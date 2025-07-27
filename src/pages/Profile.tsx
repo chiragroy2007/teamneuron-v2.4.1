@@ -37,7 +37,7 @@ const Profile = () => {
 
   const fetchProfile = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('profiles')
         .select('*')
         .eq('user_id', user?.id)
@@ -60,7 +60,7 @@ const Profile = () => {
           expertise: [],
         };
         
-        const { data: createdProfile, error: createError } = await supabase
+        const { data: createdProfile, error: createError } = await (supabase as any)
           .from('profiles')
           .insert(newProfile)
           .select()
@@ -93,7 +93,7 @@ const Profile = () => {
     };
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('profiles')
         .update(updatedProfile)
         .eq('user_id', user?.id);

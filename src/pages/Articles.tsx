@@ -45,14 +45,14 @@ const Articles = () => {
 
   const fetchArticles = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('articles')
         .select(`
           *,
           profiles:author_id (username, full_name),
           categories:category_id (name, color)
         `)
-        .eq('published_at', 'not.is.null')
+        .neq('published_at', null)
         .order('published_at', { ascending: false });
 
       if (error) throw error;
