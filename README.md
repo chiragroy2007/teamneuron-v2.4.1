@@ -1,73 +1,104 @@
-# Welcome to your Lovable project
+# Team Neuron Science Hub - Dashboard
 
-## Project info
+This is the dashboard for Team Neuron Science Hub, featuring a React frontend and a Node.js/SQLite backend.
 
-**URL**: https://lovable.dev/projects/7f46a707-1ab8-4673-ab4e-51b82446734a
+## Deployment Guide (Ubuntu VPS)
 
-## How can I edit this code?
+Follow these steps to deploy the application on a fresh Ubuntu server.
 
-There are several ways of editing your application.
+### 1. Prerequisites
 
-**Use Lovable**
+Update your system and install necessary tools:
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/7f46a707-1ab8-4673-ab4e-51b82446734a) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl git unzip
 ```
 
-**Edit a file directly in GitHub**
+**Install Node.js (v20+):**
+```bash
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+**Install PM2 (Process Manager):**
+```bash
+sudo npm install -g pm2
+```
 
-**Use GitHub Codespaces**
+### 2. Clone the Repository
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```bash
+git clone https://github.com/TeamNeuron-blog/dashboard.git
+cd dashboard
+```
 
-## What technologies are used for this project?
+### 3. Backend Setup
 
-This project is built with:
+1.  Navigate to the server directory:
+    ```bash
+    cd server
+    ```
+2.  Install dependencies:
+    ```bash
+    npm install
+    ```
+3.  Configure Environment Variables:
+    ```bash
+    cp .env.example .env
+    nano .env
+    ```
+    *   Set `PORT` (e.g., `5000`).
+    *   Set a secure `JWT_SECRET`.
+4.  Build the backend:
+    ```bash
+    npm run build
+    ```
+5.  Start with PM2:
+    ```bash
+    pm2 start dist/index.js --name "neuron-backend"
+    ```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### 4. Frontend Setup
 
-## How can I deploy this project?
+1.  Navigate to the project root:
+    ```bash
+    cd ..
+    ```
+2.  Install dependencies:
+    ```bash
+    npm install
+    ```
+3.  Configure Environment Variables:
+    ```bash
+    cp .env.example .env
+    nano .env
+    ```
+    *   Set `VITE_API_URL` to your domain/IP + Backend Port (e.g., `http://your-server-ip:5000` or `https://api.yourdomain.com`).
+4.  Build the frontend:
+    ```bash
+    npm run build
+    ```
+5.  Serve with PM2 (using `serve`):
+    ```bash
+    sudo npm install -g serve
+    pm2 start serve --name "neuron-frontend" -- --s dist -l 3000
+    ```
+    *(This serves the frontend on port 3000)*
 
-Simply open [Lovable](https://lovable.dev/projects/7f46a707-1ab8-4673-ab4e-51b82446734a) and click on Share -> Publish.
+### 5. Nginx Reverse Proxy (Optional, Recommended)
 
-## Can I connect a custom domain to my Lovable project?
+Install Nginx to serve on Port 80/443:
 
-Yes, you can!
+```bash
+sudo apt install -y nginx
+```
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+Configure Nginx (`/etc/nginx/sites-available/default`) to proxy traffic:
+- `/api` -> `http://localhost:5000`
+- `/` -> `http://localhost:3000`
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+### 6. Managing Ports
+
+- **Backend Port**: Change `PORT` in `server/.env` and restart backend (`pm2 restart neuron-backend`).
+- **Frontend Port**: Change the `-l 3000` flag in the PM2 start command.

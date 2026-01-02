@@ -12,3 +12,18 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+Sitemap: https://team-neuron-science-hub.vercel.app/sitemap.xml
+
+# Branding for search engines
+# Site: TeamNeuron
+# Description: TeamNeuron is a comprehensive science community for researchers, students, and enthusiasts to share articles, collaborate, and discuss the latest in all fields of scientific research and discovery.
+# Logo: /logo-white.png, /logo-black.png, /favicon.png
+# Main pages: /, /articles, /discussions, /featured, /collaborate, /profile
+
+# Encourage indexing of important sections
+Allow: /articles
+Allow: /discussions
+Allow: /featured
+Allow: /collaborate
+Allow: /profile

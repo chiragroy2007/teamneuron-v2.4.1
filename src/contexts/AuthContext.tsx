@@ -1,11 +1,18 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import { api } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
+
+// Define types that match what the app expects (or close to it)
+export interface User {
+  id: string;
+  email?: string;
+  username?: string;
+  full_name?: string;
+  avatar_url?: string;
+}
 
 interface AuthContextType {
   user: User | null;
-  session: Session | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, username?: string, fullName?: string) => Promise<{ error: any }>;
@@ -24,81 +31,70 @@ export const useAuth = () => {
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  useEffect(() => {
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (event === 'SIGNED_IN') {
-          toast({
-            title: "Welcome!",
-            description: "Successfully signed in to TeamNeuron.",
-          });
-        } else if (event === 'SIGNED_OUT') {
-          toast({
-            title: "Signed out",
-            description: "You have been signed out successfully.",
-          });
-        }
-      }
-    );
-
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+  const checkUser = async () => {
+    try {
+      const userData = await api.auth.me();
+      setUser(userData);
+    } catch (error) {
+      console.error("Auth check failed", error);
+      localStorage.removeItem('token');
+      setUser(null);
+    } finally {
       setLoading(false);
-    });
+    }
+  };
 
-    return () => subscription.unsubscribe();
-  }, [toast]);
+  useEffect(() => {
+    checkUser();
+  }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { error };
+    try {
+      const data = await api.auth.login({ email, password });
+      localStorage.setItem('token', data.token);
+      setUser(data.user);
+
+      toast({
+        title: "Welcome!",
+        description: "Successfully signed in to TeamNeuron.",
+      });
+      return { error: null };
+    } catch (error: any) {
+      return { error: error };
+    }
   };
 
   const signUp = async (email: string, password: string, username?: string, fullName?: string) => {
-    const redirectUrl = `${window.location.origin}/`;
-    
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: {
-          username,
-          full_name: fullName,
-        }
-      }
-    });
-    return { error };
+    try {
+      const data = await api.auth.signup({ email, password, username, fullName });
+      localStorage.setItem('token', data.token);
+      setUser(data.user);
+
+      toast({
+        title: "Welcome!",
+        description: "Account created successfully.",
+      });
+      return { error: null };
+    } catch (error: any) {
+      return { error: error };
+    }
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
+    localStorage.removeItem('token');
+    setUser(null);
+    toast({
+      title: "Signed out",
+      description: "You have been signed out successfully.",
+    });
   };
 
   return (
     <AuthContext.Provider value={{
       user,
-      session,
       loading,
       signIn,
       signUp,
