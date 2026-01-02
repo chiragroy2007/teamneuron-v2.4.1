@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,6 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Brain, ArrowLeft, Eye, EyeOff, Mail, Lock, User, UserPlus, ChevronDown } from 'lucide-react';
-import Footer from '@/components/Layout/Footer';
 
 
 const Auth = () => {
@@ -82,140 +81,124 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 relative overflow-hidden">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-40" style={{
-        backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23000000\' fill-opacity=\'0.02\'%3E%3Ccircle cx=\'30\' cy=\'30\' r=\'2\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")'
-      }}></div>
-
-      <div className="relative z-10 min-h-screen flex flex-col lg:flex-row">
+    <div className="min-h-screen bg-background relative overflow-hidden flex flex-col">
+      <div className="flex-grow flex flex-col lg:flex-row">
         {/* Left Side - Branding */}
-        <div className="w-full lg:w-1/2 bg-black text-white p-8 lg:p-12 flex flex-col justify-end lg:justify-center relative overflow-hidden min-h-[50vh] lg:min-h-screen">
-          <div className="absolute inset-0 bg-gradient-to-br from-black via-gray-900 to-blue-900/20"></div>
-          <div className="relative z-10">
-            <div className="mb-8 text-center lg:text-left">
-              <img src="/logo-white.png" alt="TeamNeuron Logo" className="w-40 inline-block" />
-            </div>
-            <h2 className="text-3xl font-light mb-6 leading-tight">
-              The Future of<br></br><span className="block text-blue-400 font-semibold">Collaborative Research</span>
-            </h2>
-            <p className="text-lg text-gray-300 mb-8 leading-relaxed">
-              Connect with brilliant minds, share groundbreaking research, and collaborate on the next generation of scientific discoveries.
-            </p>
-            <div className="space-y-4 mb-8">
-              <div className="flex items-center text-gray-300">
-                <Brain className="h-5 w-5 mr-3 text-blue-400" />
-                <span>Advanced Research Collaboration</span>
-              </div>
-              <div className="flex items-center text-gray-300">
-                <UserPlus className="h-5 w-5 mr-3 text-blue-400" />
-                <span>Global Science Community</span>
-              </div>
-              <div className="flex items-center text-gray-300">
-                <Mail className="h-5 w-5 mr-3 text-blue-400" />
-                <span>Real-time Research Updates</span>
-              </div>
-            </div>
-            <div className="w-full text-center lg:text-left mt-8">
-              <span className="text-lg text-white font-semibold">
-                Check out our{' '}
-                <a
-                  href="/featured"
-                  className="underline text-white hover:text-blue-300 transition-colors font-semibold"
-                  style={{ fontFamily: 'inherit', fontSize: '1.08em' }}
-                >
-                  Featured Articles
+        <div className="w-full lg:w-1/2 bg-black text-white p-8 lg:p-12 flex flex-col justify-center relative overflow-hidden min-h-[40vh] lg:min-h-auto">
+          {/* Subtle Abstract Background */}
+          <div className="absolute inset-0 opacity-20 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-neutral-800 via-black to-black"></div>
+
+          <div className="relative z-10 max-w-xl mx-auto lg:mx-0">
+            <div className="mb-12">
+              <img src="/logo-white.png" alt="TeamNeuron Logo" className="w-16 h-16 mb-6" />
+              <h2 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight leading-tight">
+                The new era of <br />
+                <span className="text-neutral-400">Collaborative Research</span>
+              </h2>
+              <p className="text-lg text-neutral-400 leading-relaxed mb-8 max-w-lg">
+                Join a community of forward-thinking researchers. Collaborate, discuss, and build the future of science together.
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-4">
+                <a href="/featured" className="inline-flex items-center text-lg font-medium text-white hover:text-neutral-300 transition-colors group">
+                  Explore Featured Articles
+                  <ArrowLeft className="ml-2 h-4 w-4 rotate-180 transition-transform group-hover:translate-x-1" />
                 </a>
-                {' '}page!
-              </span>
+              </div>
             </div>
-          </div>
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 lg:hidden z-20">
-            <ChevronDown className="w-6 h-6 text-white animate-bounce" />
+
+            <div className="pt-10 mt-auto">
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm w-fit">
+                <div className="flex -space-x-3">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="w-8 h-8 rounded-full bg-neutral-800 border-2 border-black flex items-center justify-center">
+                      <User className="w-4 h-4 text-neutral-400" />
+                    </div>
+                  ))}
+                  <div className="w-8 h-8 rounded-full bg-neutral-900 border-2 border-black flex items-center justify-center text-[10px] text-white font-medium">
+                    +2k
+                  </div>
+                </div>
+                <div>
+                  <p className="text-white text-sm font-medium">Global Research Network</p>
+                  <div className="flex items-center gap-1.5">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                    </span>
+                    <p className="text-neutral-500 text-xs">Active researchers online</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Right Side - Auth Form */}
-        <div className="w-full lg:w-1/2 flex items-center justify-center p-8 flex-grow">
-          <div className="w-full max-w-md">
+        <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-12 bg-neutral-50/50">
+          <div className="w-full max-w-md space-y-8">
+            <div className="text-center lg:text-left">
+              <h1 className="text-3xl font-bold tracking-tight text-neutral-900">
+                {isSignUp ? 'Create an account' : 'Welcome back'}
+              </h1>
+              <p className="mt-2 text-neutral-500">
+                {isSignUp ? 'Enter your details below to create your account' : 'Enter your email below to access your account'}
+              </p>
+            </div>
 
-
-            <Card className="border-0 shadow-2xl bg-white/80 backdrop-blur-sm">
-              <CardHeader className="text-center pb-6">
-                <CardTitle className="text-2xl font-bold text-black mb-2">
-                  {isSignUp ? 'Create Account' : 'Welcome Back'}
-                </CardTitle>
-                <CardDescription className="text-gray-600">
-                  {isSignUp
-                    ? 'Join the global science community'
-                    : 'Sign in to continue your research journey'}
-                </CardDescription>
-              </CardHeader>
-
-              <CardContent className="space-y-6">
-
+            <Card className="border-neutral-200 shadow-xl shadow-neutral-200/40 bg-white">
+              <CardContent className="p-8 space-y-6">
                 {isSignUp ? (
-                  <form onSubmit={handleSignUp} className="space-y-4">
+                  <form onSubmit={handleSignUp} className="space-y-5">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="fullName" className="text-black font-medium">Full Name</Label>
-                        <div className="relative">
-                          <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                          <Input
-                            id="fullName"
-                            name="fullName"
-                            placeholder="Dr. Jane Smith"
-                            className="pl-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                            disabled={loading}
-                          />
-                        </div>
+                        <Label htmlFor="fullName">Full Name</Label>
+                        <Input
+                          id="fullName"
+                          name="fullName"
+                          placeholder="Dr. Jane Smith"
+                          className="h-11 bg-neutral-50 border-neutral-200"
+                          disabled={loading}
+                        />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="username" className="text-black font-medium">Username</Label>
-                        <div className="relative">
-                          <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                          <Input
-                            id="username"
-                            name="username"
-                            placeholder="neuroscientist"
-                            className="pl-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                            disabled={loading}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-email" className="text-black font-medium">Email Address</Label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <Label htmlFor="username">Username</Label>
                         <Input
-                          id="signup-email"
-                          name="email"
-                          type="email"
-                          placeholder="your@email.com"
-                          className="pl-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                          required
+                          id="username"
+                          name="username"
+                          placeholder="neuroscientist"
+                          className="h-11 bg-neutral-50 border-neutral-200"
                           disabled={loading}
                         />
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="signup-password" className="text-black font-medium">Password</Label>
+                      <Label htmlFor="signup-email">Email Address</Label>
+                      <Input
+                        id="signup-email"
+                        name="email"
+                        type="email"
+                        placeholder="name@example.com"
+                        className="h-11 bg-neutral-50 border-neutral-200"
+                        required
+                        disabled={loading}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-password">Password</Label>
                       <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <Input
                           id="signup-password"
                           name="password"
                           type={showPassword ? 'text' : 'password'}
-                          placeholder="Create a strong password"
-                          className="pl-10 pr-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                          className="h-11 bg-neutral-50 border-neutral-200 pr-10"
                           required
                           disabled={loading}
                         />
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
                         >
                           {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </button>
@@ -223,7 +206,7 @@ const Auth = () => {
                     </div>
                     <Button
                       type="submit"
-                      className="w-full bg-black hover:bg-gray-800 text-white font-medium py-3 transition-all duration-200"
+                      className="w-full h-11 bg-black hover:bg-neutral-800 text-white font-medium transition-all"
                       disabled={loading}
                     >
                       {loading ? (
@@ -232,47 +215,42 @@ const Auth = () => {
                           Creating Account...
                         </>
                       ) : (
-                        <>
-                          <UserPlus className="mr-2 h-4 w-4" />
-                          Create Account
-                        </>
+                        'Create Account'
                       )}
                     </Button>
                   </form>
                 ) : (
-                  <form onSubmit={handleSignIn} className="space-y-4">
+                  <form onSubmit={handleSignIn} className="space-y-5">
                     <div className="space-y-2">
-                      <Label htmlFor="signin-email" className="text-black font-medium">Email Address</Label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                        <Input
-                          id="signin-email"
-                          name="email"
-                          type="email"
-                          placeholder="your@email.com"
-                          className="pl-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                          required
-                          disabled={loading}
-                        />
-                      </div>
+                      <Label htmlFor="signin-email">Email Address</Label>
+                      <Input
+                        id="signin-email"
+                        name="email"
+                        type="email"
+                        placeholder="name@example.com"
+                        className="h-11 bg-neutral-50 border-neutral-200"
+                        required
+                        disabled={loading}
+                      />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="signin-password" className="text-black font-medium">Password</Label>
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="signin-password">Password</Label>
+                        <a href="#" className="text-xs text-neutral-500 hover:text-black">Forgot password?</a>
+                      </div>
                       <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <Input
                           id="signin-password"
                           name="password"
                           type={showPassword ? 'text' : 'password'}
-                          placeholder="Enter your password"
-                          className="pl-10 pr-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                          className="h-11 bg-neutral-50 border-neutral-200 pr-10"
                           required
                           disabled={loading}
                         />
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
                         >
                           {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </button>
@@ -280,7 +258,7 @@ const Auth = () => {
                     </div>
                     <Button
                       type="submit"
-                      className="w-full bg-black hover:bg-gray-800 text-white font-medium py-3 transition-all duration-200"
+                      className="w-full h-11 bg-black hover:bg-neutral-800 text-white font-medium transition-all"
                       disabled={loading}
                     >
                       {loading ? (
@@ -289,35 +267,44 @@ const Auth = () => {
                           Signing In...
                         </>
                       ) : (
-                        <>
-                          <ArrowLeft className="mr-2 h-4 w-4 rotate-180" />
-                          Sign In
-                        </>
+                        'Sign In'
                       )}
                     </Button>
                   </form>
                 )}
 
-                {/* Toggle between Sign In and Sign Up */}
-                <div className="text-center pt-4 border-t border-gray-100">
-                  <p className="text-gray-600 mb-3">
-                    {isSignUp ? 'Already have an account?' : "Don't have an account?"}
-                  </p>
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsSignUp(!isSignUp)}
-                    className="w-full border-gray-200 text-black hover:bg-gray-50 font-medium"
-                    disabled={loading}
-                  >
-                    {isSignUp ? 'Sign In Instead' : 'Create Account'}
-                  </Button>
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-neutral-200" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-white px-2 text-neutral-500">Or continue with</span>
+                  </div>
                 </div>
+
+                <div className="pt-2 text-center">
+                  <p className="text-sm text-neutral-600">
+                    {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
+                    <button
+                      onClick={() => setIsSignUp(!isSignUp)}
+                      className="text-black font-semibold hover:underline bg-transparent border-0 p-0 inline"
+                      disabled={loading}
+                    >
+                      {isSignUp ? 'Sign In' : 'Sign Up'}
+                    </button>
+                  </p>
+                </div>
+
               </CardContent>
             </Card>
+
+            <p className="text-center text-xs text-neutral-400">
+              By clicking continue, you agree to our <Link to="/terms" className="underline hover:text-neutral-500">Terms of Service</Link> and <Link to="/privacy" className="underline hover:text-neutral-500">Privacy Policy</Link>.
+            </p>
+
           </div>
         </div>
       </div>
-          <Footer />
     </div>
   );
 };

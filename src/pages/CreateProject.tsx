@@ -142,63 +142,83 @@ const CreateProject: React.FC = () => {
 
   return (
     <Layout>
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold">Create {kind === 'intent' ? 'Looking for X' : 'Project'} Post</h1>
-          <div className="flex gap-2">
-            <Select value={kind} onValueChange={(v: any) => setKind(v)}>
-              <SelectTrigger className="w-44">
-                <SelectValue placeholder="Post type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="project">Project</SelectItem>
-                <SelectItem value="intent">Looking for X</SelectItem>
-              </SelectContent>
-            </Select>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="secondary"><Plus className="h-4 w-4 mr-2" />Templates</Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>Apply a template</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-3 max-h-[60vh] overflow-auto">
-                  {templates.length === 0 ? (
-                    <div className="text-sm text-gray-500">No templates available.</div>
-                  ) : templates.map(t => (
-                    <Card key={t.id} className="hover:bg-muted/40 cursor-pointer" onClick={() => applyTemplate(t)}>
-                      <CardHeader>
-                        <CardTitle className="text-base">{t.title}</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-sm text-gray-600 line-clamp-3" dangerouslySetInnerHTML={{ __html: t.content }} />
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </DialogContent>
-            </Dialog>
+      <div className="min-h-screen bg-background py-12">
+        <div className="container max-w-4xl mx-auto px-4">
+          <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight text-neutral-900 mb-2">Create {kind === 'intent' ? 'Looking for X' : 'Project'} Post</h1>
+              <p className="text-neutral-500 text-sm">Launch a new research initiative or find collaborators.</p>
+            </div>
+
+            <div className="flex gap-3">
+              <Select value={kind} onValueChange={(v: any) => setKind(v)}>
+                <SelectTrigger className="w-40 border-neutral-200 focus:border-neutral-900">
+                  <SelectValue placeholder="Post type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="project">Project</SelectItem>
+                  <SelectItem value="intent">Looking for X</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="border-neutral-200 hover:bg-neutral-50 text-neutral-700">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Templates
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Apply a template</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-3 max-h-[60vh] overflow-auto">
+                    {templates.length === 0 ? (
+                      <div className="text-sm text-gray-500">No templates available.</div>
+                    ) : templates.map(t => (
+                      <Card key={t.id} className="hover:bg-muted/40 cursor-pointer border-neutral-200 shadow-none" onClick={() => applyTemplate(t)}>
+                        <CardHeader className="py-4">
+                          <CardTitle className="text-base font-semibold text-neutral-900">{t.title}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="py-2 pb-4">
+                          <div className="text-sm text-neutral-600 line-clamp-3" dangerouslySetInnerHTML={{ __html: t.content }} />
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
-        </div>
 
-        <Card>
-          <CardContent className="space-y-6 pt-6">
+          <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-8 space-y-8">
             <div className="space-y-2">
-              <Label>Title</Label>
-              <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g., EEG-based Sleep Stage Classification" />
+              <Label className="uppercase text-xs font-bold text-neutral-700">Title</Label>
+              <Input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g., EEG-based Sleep Stage Classification"
+                className="h-12 text-lg font-medium border-neutral-200 focus:border-neutral-900 transition-colors placeholder:text-neutral-300"
+              />
             </div>
 
             <div className="space-y-2">
-              <Label>Description</Label>
-              <RichTextEditor content={description} onChange={setDescription} placeholder="Describe your project or intent..." className="min-h-[280px]" />
+              <Label className="uppercase text-xs font-bold text-neutral-700">Description</Label>
+              <div className="border border-neutral-200 rounded-md overflow-hidden focus-within:border-neutral-900 transition-colors">
+                <RichTextEditor
+                  content={description}
+                  onChange={setDescription}
+                  placeholder="Describe your project or intent..."
+                  className="min-h-[280px] border-none focus:ring-0"
+                />
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label>Commitment</Label>
+                <Label className="uppercase text-xs font-bold text-neutral-700">Commitment</Label>
                 <Select value={commitment} onValueChange={(v: any) => setCommitment(v)}>
-                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectTrigger className="h-10 border-neutral-200 focus:border-neutral-900"><SelectValue placeholder="Select" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="one-time">One-time</SelectItem>
                     <SelectItem value="2-4 hrs/week">2–4 hrs/week</SelectItem>
@@ -209,9 +229,9 @@ const CreateProject: React.FC = () => {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Location</Label>
+                <Label className="uppercase text-xs font-bold text-neutral-700">Location</Label>
                 <Select value={location} onValueChange={(v: any) => setLocation(v)}>
-                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectTrigger className="h-10 border-neutral-200 focus:border-neutral-900"><SelectValue placeholder="Select" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="remote">Remote</SelectItem>
                     <SelectItem value="hybrid">Hybrid</SelectItem>
@@ -221,15 +241,15 @@ const CreateProject: React.FC = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label>Collaboration Types</Label>
+                <Label className="uppercase text-xs font-bold text-neutral-700">Collaboration Types</Label>
                 <div className="flex flex-wrap gap-2">
                   {(['co_authoring', 'dataset_sharing', 'mentoring', 'implementation', 'analysis', 'review'] as CollabType[]).map((t) => (
                     <Badge
                       key={t}
-                      variant={collabTypes.includes(t) ? 'default' : 'outline'}
-                      className="cursor-pointer"
+                      variant="outline"
+                      className={`cursor-pointer border-neutral-200 ${collabTypes.includes(t) ? 'bg-neutral-900 text-white border-neutral-900 shadow-sm' : 'text-neutral-600 hover:bg-neutral-100'}`}
                       onClick={() => toggleCollabType(t)}
                     >
                       {t.replace('_', ' ')}
@@ -238,20 +258,30 @@ const CreateProject: React.FC = () => {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>Deadline (optional)</Label>
-                <Input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
+                <Label className="uppercase text-xs font-bold text-neutral-700">Deadline (optional)</Label>
+                <Input
+                  type="date"
+                  value={deadline}
+                  onChange={(e) => setDeadline(e.target.value)}
+                  className="h-10 border-neutral-200 focus:border-neutral-900"
+                />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label>Timezone (optional)</Label>
-                <Input value={timezone} onChange={(e) => setTimezone(e.target.value)} placeholder="e.g., UTC+5:30" />
+                <Label className="uppercase text-xs font-bold text-neutral-700">Timezone (optional)</Label>
+                <Input
+                  value={timezone}
+                  onChange={(e) => setTimezone(e.target.value)}
+                  placeholder="e.g., UTC+5:30"
+                  className="h-10 border-neutral-200 focus:border-neutral-900 placeholder:text-neutral-300"
+                />
               </div>
               <div className="space-y-2">
-                <Label>Is Paid?</Label>
+                <Label className="uppercase text-xs font-bold text-neutral-700">Is Paid?</Label>
                 <Select value={isPaid ? 'yes' : 'no'} onValueChange={(v) => setIsPaid(v === 'yes')}>
-                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectTrigger className="h-10 border-neutral-200 focus:border-neutral-900"><SelectValue placeholder="Select" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="no">No</SelectItem>
                     <SelectItem value="yes">Yes</SelectItem>
@@ -260,21 +290,28 @@ const CreateProject: React.FC = () => {
               </div>
             </div>
 
-            <TagsInput label="Areas" values={areas} setValues={setAreas} placeholder="Add area and press Enter" />
-            <TagsInput label="Skills Needed" values={skills} setValues={setSkills} placeholder="Add skill and press Enter" />
-            <TagsInput label="Tags" values={tags} setValues={setTags} placeholder="Add tag and press Enter" />
+            <div className="space-y-4">
+              <TagsInput label="Areas" values={areas} setValues={setAreas} placeholder="Add area and press Enter" />
+              <TagsInput label="Skills Needed" values={skills} setValues={setSkills} placeholder="Add skill and press Enter" />
+              <TagsInput label="Tags" values={tags} setValues={setTags} placeholder="Add tag and press Enter" />
+            </div>
 
             <div className="space-y-2">
-              <Label>Application Instructions (optional)</Label>
-              <Input value={instructions} onChange={(e) => setInstructions(e.target.value)} placeholder="e.g., Share GitHub link in your note" />
+              <Label className="uppercase text-xs font-bold text-neutral-700">Application Instructions (optional)</Label>
+              <Input
+                value={instructions}
+                onChange={(e) => setInstructions(e.target.value)}
+                placeholder="e.g., Share GitHub link in your note"
+                className="h-10 border-neutral-200 focus:border-neutral-900 placeholder:text-neutral-300"
+              />
             </div>
 
-            <div className="flex justify-end gap-2 pt-2">
-              <Button variant="secondary" onClick={() => navigate('/projects')}>Cancel</Button>
-              <Button onClick={onSubmit}>Publish</Button>
+            <div className="flex justify-end gap-3 pt-6 border-t border-neutral-100">
+              <Button variant="ghost" onClick={() => navigate('/projects')} className="text-neutral-600 hover:text-neutral-900">Cancel</Button>
+              <Button onClick={onSubmit} className="bg-neutral-900 hover:bg-neutral-800 text-white min-w-[120px]">Publish</Button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </Layout>
   );

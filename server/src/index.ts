@@ -36,11 +36,11 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 // Routes
-app.use('/auth', authRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api', apiRoutes);
 
 // Upload Endpoint
-app.post('/upload', upload.single('file'), (req, res) => {
+app.post('/api/upload', upload.single('file'), (req, res) => {
     if (!req.file) {
         return res.status(400).json({ error: 'No file uploaded' });
     }

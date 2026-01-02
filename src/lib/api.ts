@@ -11,7 +11,7 @@ const handleResponse = async (response: Response) => {
 export const api = {
     auth: {
         signup: async (data: any) => {
-            const res = await fetch(`${API_URL}/auth/signup`, {
+            const res = await fetch(`${API_URL}/api/auth/signup`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),
@@ -19,7 +19,7 @@ export const api = {
             return handleResponse(res);
         },
         login: async (data: any) => {
-            const res = await fetch(`${API_URL}/auth/login`, {
+            const res = await fetch(`${API_URL}/api/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),
@@ -30,7 +30,7 @@ export const api = {
             const token = localStorage.getItem('token');
             if (!token) return null;
 
-            const res = await fetch(`${API_URL}/auth/me`, {
+            const res = await fetch(`${API_URL}/api/auth/me`, {
                 headers: { 'Authorization': `Bearer ${token}` },
             });
             if (!res.ok) return null;
@@ -168,7 +168,7 @@ export const api = {
         },
         update: async (profileData: any) => {
             const token = localStorage.getItem('token');
-            const response = await fetch(`${API_URL}/profiles`, { // Need to implement this endpoint
+            const response = await fetch(`${API_URL}/api/profiles`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -211,11 +211,11 @@ export const api = {
             return handleResponse(res);
         },
         getMembers: async (clubId: string) => {
-            const res = await fetch(`${API_URL}/api/clubs/${clubId}/members`);
+            const res = await fetch(`${API_URL}/api/clubs/${clubId}/members?_t=${Date.now()}`);
             return handleResponse(res);
         },
         isMember: async (clubId: string, userId: string) => {
-            const res = await fetch(`${API_URL}/api/clubs/${clubId}/members/check/${userId}`);
+            const res = await fetch(`${API_URL}/api/clubs/${clubId}/members/check/${userId}?_t=${Date.now()}`);
             return handleResponse(res);
         },
         getPosts: async (clubId: string) => {

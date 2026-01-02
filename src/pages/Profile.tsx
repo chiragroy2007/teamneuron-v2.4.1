@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
-import { User, Edit3, Save, X, Plus, Loader2 } from 'lucide-react';
+import { User, Edit3, Save, X, Plus, Loader2, MapPin, Link as LinkIcon, Briefcase, GraduationCap, Github, Linkedin, Globe } from 'lucide-react';
 import Layout from '@/components/Layout/Layout';
 
 interface Profile {
@@ -20,7 +20,11 @@ interface Profile {
   bio: string;
   avatar_url: string;
   expertise: string[];
-  role?: string | null;
+  interests: string[];
+  education: string;
+  role: string | null;
+  linkedin_url: string;
+  current_projects: string;
 }
 
 const Profile = () => {
@@ -28,6 +32,7 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [newExpertise, setNewExpertise] = useState('');
+  const [newInterest, setNewInterest] = useState('');
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -39,37 +44,20 @@ const Profile = () => {
 
   const fetchProfile = async () => {
     try {
-      // Use helper to get current profile - implementing api.profiles.get('me') logic via /auth/me or a new endpoint
-      // Actually, we can use api.auth.me() for the current user profile as it returns joined data!
       const userData = await api.auth.me();
 
       if (userData) {
-        // Transform API response to Profile interface if needed
-        // api.auth.me returns: { id, email, username, full_name, avatar_url }
-        // We might need more fields like bio, expertise.
-        // Let's assume /me returns all profile fields now. I should verify this in auth.ts.
-        // Looking at auth.ts: SELECT u.id, u.email, p.username, p.full_name, p.avatar_url FROM users...
-        // It DOES NOT return bio, expertise etc.
-        // I need to update /me in auth.ts or add /profiles/me endpoint.
-
-        // For now, I will use the /profiles/batch with single ID if I can't use /me.
-        // Or better, let's just stick to what we have and maybe fetch missing details if needed?
-        // Actually best approach: Use api.profiles.get(user.id) which I added.
-        // Note: I left api.profiles.get as returning null in previous step. FAILURE.
-
-        // Let's implement api.profiles.get(user.id) properly in api.ts first? 
-        // Or assume I will fix it.
-
-        // Let's try to use api.auth.me() and update it to return more fields.
-
         setProfile({
           ...userData,
           user_id: userData.id,
-          expertise: userData.expertise || [], // Handle missing fields gracefully
+          expertise: userData.expertise || [],
+          interests: userData.interests || [],
           bio: userData.bio || '',
+          education: userData.education || '',
+          role: userData.role || '',
+          linkedin_url: userData.linkedin_url || '',
+          current_projects: userData.current_projects || '',
         });
-      } else {
-        // Create logic handled by server on signup usually.
       }
     } catch (error: any) {
       toast({
@@ -91,13 +79,17 @@ const Profile = () => {
       username: formData.get('username') as string,
       full_name: formData.get('full_name') as string,
       bio: formData.get('bio') as string,
+      role: formData.get('role') as string,
+      education: formData.get('education') as string,
+      linkedin_url: formData.get('linkedin_url') as string,
       expertise: profile.expertise,
+      interests: profile.interests,
     };
 
     try {
       await api.profiles.update(updatedProfile);
 
-      setProfile({ ...profile, ...updatedProfile });
+      setProfile(prev => prev ? ({ ...prev, ...updatedProfile }) : null);
       setEditing(false);
       toast({
         title: "Success",
@@ -112,26 +104,28 @@ const Profile = () => {
     }
   };
 
-  const addExpertise = () => {
-    if (newExpertise.trim() && profile) {
-      const updatedExpertise = [...(profile.expertise || []), newExpertise.trim()];
-      setProfile({ ...profile, expertise: updatedExpertise });
-      setNewExpertise('');
+  const addTag = (type: 'expertise' | 'interests', value: string, setter: (val: string) => void) => {
+    if (value.trim() && profile) {
+      const current = profile[type] || [];
+      if (!current.includes(value.trim())) {
+        setProfile({ ...profile, [type]: [...current, value.trim()] });
+        setter('');
+      }
     }
   };
 
-  const removeExpertise = (index: number) => {
+  const removeTag = (type: 'expertise' | 'interests', index: number) => {
     if (profile) {
-      const updatedExpertise = profile.expertise.filter((_, i) => i !== index);
-      setProfile({ ...profile, expertise: updatedExpertise });
+      const updated = (profile[type] || []).filter((_, i) => i !== index);
+      setProfile({ ...profile, [type]: updated });
     }
   };
 
   if (loading) {
     return (
       <Layout>
-        <div className="min-h-screen bg-background flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
         </div>
       </Layout>
     );
@@ -140,10 +134,10 @@ const Profile = () => {
   if (!profile) {
     return (
       <Layout>
-        <div className="min-h-screen bg-background flex items-center justify-center">
-          <Card className="glass-card w-full max-w-md mx-4">
+        <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+          <Card className="w-full max-w-md mx-4 shadow-sm border-neutral-200">
             <CardContent className="text-center py-12">
-              <p className="text-muted-foreground">Profile not found</p>
+              <p className="text-neutral-500">Profile not found</p>
             </CardContent>
           </Card>
         </div>
@@ -153,163 +147,214 @@ const Profile = () => {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-background">
-        <div className="mx-auto w-full max-w-3xl px-4 sm:px-6 py-12">
-          <Card className="border border-neutral-200 bg-white shadow-sm">
-            <CardHeader className="pb-8 border-b border-neutral-100">
-              <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-6">
-                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left">
-                  <Avatar className="h-24 w-24 border-4 border-white shadow-sm">
-                    <AvatarImage src={profile.avatar_url} />
-                    <AvatarFallback className="text-2xl bg-neutral-100 text-neutral-500">
-                      {profile.username?.charAt(0).toUpperCase() || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="space-y-1">
-                    <CardTitle className="text-2xl font-bold tracking-tight">
-                      {editing ? 'Edit Profile' : (profile.full_name || profile.username || 'Your Profile')}
-                    </CardTitle>
-                    <CardDescription className="text-base">
-                      {editing ? 'Update your information' : user?.email}
-                    </CardDescription>
-                    {!editing && profile.username && (
-                      <p className="text-sm text-muted-foreground">@{profile.username}</p>
+      <div className="min-h-screen bg-neutral-50 font-sans">
+        {/* Profile Header / Cover */}
+        <div className="w-full h-64 bg-neutral-900 relative overflow-hidden">
+          {/* Abstract Mesh Gradient */}
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-neutral-800 via-neutral-900 to-black opacity-80"></div>
+          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150"></div>
+        </div>
+
+        <div className="container max-w-5xl mx-auto px-4 sm:px-6 relative -mt-24 pb-20">
+          <div className="flex flex-col md:flex-row gap-8 items-start">
+
+            {/* Left Column: Avatar & Quick Info */}
+            <div className="w-full md:w-1/3 space-y-6">
+              <Card className="border-neutral-200 shadow-lg overflow-visible bg-white relative">
+                <CardContent className="pt-0 px-0 pb-6 flex flex-col items-center">
+                  <div className="relative -mt-16 mb-5">
+                    <Avatar className="h-32 w-32 border-[4px] border-white shadow-md bg-white">
+                      <AvatarImage src={profile.avatar_url} className="object-cover" />
+                      <AvatarFallback className="text-4xl bg-neutral-100 text-neutral-400">
+                        {profile.username?.charAt(0).toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
+
+                  <div className="w-full text-center px-6 space-y-2 mb-6">
+                    <h2 className="text-2xl font-bold text-neutral-900 break-words leading-tight">
+                      {profile.full_name || profile.username}
+                    </h2>
+                    {profile.role && (
+                      <div className="text-neutral-500 font-medium flex flex-wrap items-center justify-center gap-1.5 break-words">
+                        <Briefcase className="w-3.5 h-3.5 shrink-0" />
+                        <span className="text-center">{profile.role}</span>
+                      </div>
+                    )}
+                    <p className="text-sm text-neutral-400 break-all">@{profile.username}</p>
+                  </div>
+
+
+                  <div className="w-full px-6 flex flex-col gap-3">
+                    {!editing && (
+                      <Button onClick={() => setEditing(true)} variant="outline" className="w-full border-neutral-300 hover:bg-neutral-50 text-neutral-700">
+                        <Edit3 className="mr-2 h-4 w-4" /> Edit Profile
+                      </Button>
+                    )}
+
+                    {(profile.linkedin_url) && !editing && (
+                      <div className="flex gap-2 justify-center pt-2">
+                        <a href={profile.linkedin_url} target="_blank" rel="noopener noreferrer" className="p-2 bg-neutral-100 rounded-full text-neutral-600 hover:bg-[#0077b5] hover:text-white transition-colors">
+                          <Linkedin className="w-5 h-5" />
+                        </a>
+                        {/* Add more social placeholders if needed */}
+                      </div>
                     )}
                   </div>
-                </div>
-                {!editing ? (
-                  <Button variant="outline" size="sm" onClick={() => setEditing(true)} className="shrink-0">
-                    <Edit3 className="mr-2 h-4 w-4" />
-                    Edit Profile
-                  </Button>
-                ) : (
-                  <Button variant="ghost" size="sm" onClick={() => setEditing(false)} className="shrink-0 text-muted-foreground hover:text-foreground">
-                    <X className="mr-2 h-4 w-4" />
-                    Cancel
-                  </Button>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="pt-8">
-              {editing ? (
-                <form onSubmit={handleSave} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="username">Username</Label>
-                      <Input
-                        id="username"
-                        name="username"
-                        defaultValue={profile.username || ''}
-                        placeholder="your-username"
-                        className="bg-white/50"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="full_name">Full Name</Label>
-                      <Input
-                        id="full_name"
-                        name="full_name"
-                        defaultValue={profile.full_name || ''}
-                        placeholder="Dr. Jane Smith"
-                        className="bg-white/50"
-                      />
-                    </div>
-                  </div>
+                </CardContent>
+              </Card>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="bio">Bio</Label>
-                    <Textarea
-                      id="bio"
-                      name="bio"
-                      defaultValue={profile.bio || ''}
-                      placeholder="Tell us about your research interests and background..."
-                      rows={4}
-                      className="bg-white/50 resize-none"
-                    />
-                  </div>
+              {/* Stats / Sidebar Info (Education etc) */}
+              {!editing && (
+                <Card className="border-neutral-200 shadow-sm">
+                  <CardHeader className="pb-3 border-b border-neutral-100">
+                    <CardTitle className="text-base font-bold text-neutral-900 flex items-center gap-2">
+                      <GraduationCap className="w-4 h-4 text-neutral-500" /> Education
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-4">
+                    {profile.education ? (
+                      <p className="text-sm text-neutral-600 leading-relaxed">{profile.education}</p>
+                    ) : (
+                      <p className="text-xs text-neutral-400 italic">No education details added.</p>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+            </div>
 
-                  <div className="space-y-3">
-                    <Label>Areas of Expertise</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        value={newExpertise}
-                        onChange={(e) => setNewExpertise(e.target.value)}
-                        placeholder="e.g., Computational Neuroscience"
-                        className="bg-white/50"
-                        onKeyPress={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            addExpertise();
-                          }
-                        }}
-                      />
-                      <Button type="button" variant="outline" onClick={addExpertise}>
-                        <Plus className="h-4 w-4" />
+            {/* Right Column: Main Content / Edit Form */}
+            <div className="w-full md:w-2/3">
+              <Card className="border-neutral-200 shadow-sm bg-white min-h-[400px]">
+                {editing ? (
+                  <div className="p-6 md:p-8">
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="text-xl font-bold text-neutral-900">Edit Profile</h3>
+                      <Button variant="ghost" size="sm" onClick={() => setEditing(false)}>
+                        <X className="w-4 h-4" />
                       </Button>
                     </div>
-                    <div className="flex flex-wrap gap-2 min-h-[2rem]">
-                      {profile.expertise?.map((skill, index) => (
-                        <Badge
-                          key={index}
-                          variant="secondary"
-                          className="cursor-pointer hover:bg-red-100 hover:text-red-700 transition-colors pl-2.5 pr-1.5 py-1"
-                          onClick={() => removeExpertise(index)}
-                        >
-                          {skill} <X className="ml-1.5 h-3 w-3 opacity-50" />
-                        </Badge>
-                      ))}
+
+                    <form onSubmit={handleSave} className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div className="space-y-2">
+                          <Label htmlFor="full_name">Full Name</Label>
+                          <Input id="full_name" name="full_name" defaultValue={profile.full_name || ''} className="bg-neutral-50 border-neutral-200" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="username">Username</Label>
+                          <Input id="username" name="username" defaultValue={profile.username || ''} className="bg-neutral-50 border-neutral-200" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="role">Role / Title</Label>
+                          <Input id="role" name="role" defaultValue={profile.role || ''} placeholder="e.g. PhD Candidate, Researcher" className="bg-neutral-50 border-neutral-200" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="linkedin_url">LinkedIn URL</Label>
+                          <Input id="linkedin_url" name="linkedin_url" defaultValue={profile.linkedin_url || ''} placeholder="https://linkedin.com/in/..." className="bg-neutral-50 border-neutral-200" />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="education">Education</Label>
+                        <Input id="education" name="education" defaultValue={profile.education || ''} placeholder="e.g. University of Science, PhD in Biology" className="bg-neutral-50 border-neutral-200" />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="bio">About Me</Label>
+                        <Textarea id="bio" name="bio" defaultValue={profile.bio || ''} rows={5} className="bg-neutral-50 border-neutral-200 resize-none" placeholder="Share your research interests..." />
+                      </div>
+
+                      {/* Skills / Expertise */}
+                      <div className="space-y-3">
+                        <Label>Areas of Expertise</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            value={newExpertise}
+                            onChange={(e) => setNewExpertise(e.target.value)}
+                            onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag('expertise', newExpertise, setNewExpertise))}
+                            placeholder="Add skill..."
+                            className="bg-neutral-50 border-neutral-200"
+                          />
+                          <Button type="button" onClick={() => addTag('expertise', newExpertise, setNewExpertise)} variant="outline">
+                            <Plus className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {profile.expertise?.map((tag, i) => (
+                            <Badge key={i} variant="secondary" className="pl-3 pr-1.5 py-1">
+                              {tag} <X className="ml-2 w-3 h-3 cursor-pointer opacity-50 hover:opacity-100" onClick={() => removeTag('expertise', i)} />
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Interests */}
+                      <div className="space-y-3">
+                        <Label>Research Interests</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            value={newInterest}
+                            onChange={(e) => setNewInterest(e.target.value)}
+                            onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag('interests', newInterest, setNewInterest))}
+                            placeholder="Add interest..."
+                            className="bg-neutral-50 border-neutral-200"
+                          />
+                          <Button type="button" onClick={() => addTag('interests', newInterest, setNewInterest)} variant="outline">
+                            <Plus className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {profile.interests?.map((tag, i) => (
+                            <Badge key={i} variant="secondary" className="pl-3 pr-1.5 py-1">
+                              {tag} <X className="ml-2 w-3 h-3 cursor-pointer opacity-50 hover:opacity-100" onClick={() => removeTag('interests', i)} />
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="pt-4 flex justify-end gap-3">
+                        <Button type="button" variant="ghost" onClick={() => setEditing(false)}>Cancel</Button>
+                        <Button type="submit" className="bg-neutral-900 text-white hover:bg-neutral-800">Save Changes</Button>
+                      </div>
+                    </form>
+                  </div>
+                ) : (
+                  <CardContent className="p-6 md:p-8 space-y-8">
+                    <div>
+                      <h3 className="text-sm font-bold uppercase tracking-wider text-neutral-400 mb-3">About</h3>
+                      <p className="text-neutral-700 leading-relaxed whitespace-pre-line">
+                        {profile.bio || <span className="text-neutral-400 italic">No bio added yet.</span>}
+                      </p>
                     </div>
-                  </div>
 
-                  <div className="pt-4">
-                    <Button type="submit" className="w-full bg-neutral-900 text-white hover:bg-neutral-800">
-                      <Save className="mr-2 h-4 w-4" />
-                      Save Changes
-                    </Button>
-                  </div>
-                </form>
-              ) : (
-                <div className="space-y-8">
-                  <div>
-                    <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">About</h3>
-                    <p className="text-sm leading-relaxed text-foreground/80">
-                      {profile.bio || 'No bio added yet. Click edit to add your research background and interests.'}
-                    </p>
-                  </div>
-
-                  <div>
-                    <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">Expertise</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {profile.expertise && profile.expertise.length > 0 ? (
-                        profile.expertise.map((skill, index) => (
-                          <Badge key={index} variant="secondary" className="bg-neutral-100 text-neutral-700 hover:bg-neutral-200 border-0 px-3 py-1">
-                            {skill}
-                          </Badge>
-                        ))
-                      ) : (
-                        <p className="text-sm text-muted-foreground italic">No expertise areas added yet.</p>
-                      )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div>
+                        <h3 className="text-sm font-bold uppercase tracking-wider text-neutral-400 mb-3">Expertise</h3>
+                        <div className="flex flex-wrap gap-2">
+                          {profile.expertise?.length > 0 ? profile.expertise.map((tag, i) => (
+                            <Badge key={i} className="bg-neutral-100 text-neutral-800 hover:bg-neutral-200 border-0">{tag}</Badge>
+                          )) : <span className="text-neutral-400 italic text-sm">No expertise listed.</span>}
+                        </div>
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold uppercase tracking-wider text-neutral-400 mb-3">Interests</h3>
+                        <div className="flex flex-wrap gap-2">
+                          {profile.interests?.length > 0 ? profile.interests.map((tag, i) => (
+                            <Badge key={i} variant="outline" className="border-neutral-200 text-neutral-600">{tag}</Badge>
+                          )) : <span className="text-neutral-400 italic text-sm">No interests listed.</span>}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              )}
+                  </CardContent>
+                )}
+              </Card>
+            </div>
 
-              {/* Admin Panel Link (visible only to admins) */}
-              {profile.role === 'admin' && !editing && (
-                <div className="mt-12 pt-6 border-t border-neutral-100">
-                  <a
-                    href="/admin"
-                    className="inline-flex items-center justify-center w-full sm:w-auto px-4 py-2 bg-neutral-900 text-white text-sm font-medium rounded-md hover:bg-neutral-800 transition-colors"
-                  >
-                    Admin Dashboard
-                  </a>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          </div>
         </div>
       </div>
-    </Layout>
+    </Layout >
   );
 };
 

@@ -278,6 +278,34 @@ router.get('/categories', async (req, res) => {
     }
 });
 
+// Get All Profiles (with search)
+router.get('/profiles', async (req, res) => {
+    try {
+        const { limit = 20, offset = 0, q } = req.query;
+        let sql = `SELECT user_id, username, full_name, avatar_url, role, bio, interests, skills, education, linkedin_url FROM profiles`;
+        const params: any[] = [];
+
+        if (q) {
+            sql += ` WHERE username LIKE ? OR full_name LIKE ? OR interests LIKE ? OR skills LIKE ?`;
+            const search = `%${q}%`;
+            params.push(search, search, search, search);
+        }
+
+        sql += ` ORDER BY user_id DESC LIMIT ? OFFSET ?`;
+        params.push(parseInt(limit as string), parseInt(offset as string));
+
+        const result = await query(sql, params);
+
+        // Parse JSON fields
+        const rows = result.rows.map(row => parseJSONFields(row, ['interests', 'skills', 'collaboration_preferences']));
+
+        res.json(rows);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 // Get Profiles (Random/Researchers)
 router.get('/profiles/random', async (req, res) => {
     try {

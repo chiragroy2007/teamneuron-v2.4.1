@@ -24,6 +24,9 @@ import CreateProject from "@/pages/CreateProject";
 import ProjectPage from "@/pages/ProjectPage";
 import ClubsPage from "@/pages/clubs";
 import IiserTirupatiClub from "@/pages/clubs/clubpages/iisertirupati";
+import Tools from "./pages/Tools";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
 
 const queryClient = new QueryClient();
 
@@ -55,6 +58,7 @@ const App = () => (
             <Route path="/club" element={<ClubsPage />} />
             <Route path="/synapse" element={<Synapse />} />
             <Route path="/featured" element={<Featured />} />
+            <Route path="/tools" element={<Tools />} />
             <Route
               path="/clubs/iiser-tirupati"
               element={<IiserTirupatiClub />}
@@ -63,6 +67,8 @@ const App = () => (
               path="/clun/iiser-tirupati"
               element={<IiserTirupatiClub />}
             />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/terms" element={<Terms />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

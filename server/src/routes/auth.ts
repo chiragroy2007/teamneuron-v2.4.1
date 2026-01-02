@@ -90,7 +90,7 @@ router.post('/login', async (req, res) => {
 router.get('/me', authenticateToken, async (req: any, res) => {
     try {
         const result = await query(
-            `SELECT u.id, u.email, p.username, p.full_name, p.avatar_url 
+            `SELECT u.id, u.email, p.* 
        FROM users u 
        JOIN profiles p ON u.id = p.user_id 
        WHERE u.id = ?`,
@@ -99,8 +99,23 @@ router.get('/me', authenticateToken, async (req: any, res) => {
 
         if (result.rows.length === 0) return res.sendStatus(404);
 
-        res.json(result.rows[0]);
+        const row = result.rows[0];
+
+        // Helper to parse JSON fields safely
+        const jsonFields = ['interests', 'skills', 'collaboration_preferences', 'current_projects']; // Add others if needed
+        jsonFields.forEach(field => {
+            if (row[field] && typeof row[field] === 'string') {
+                try {
+                    row[field] = JSON.parse(row[field]);
+                } catch (e) {
+                    row[field] = [];
+                }
+            }
+        });
+
+        res.json(row);
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: 'Server error' });
     }
 });

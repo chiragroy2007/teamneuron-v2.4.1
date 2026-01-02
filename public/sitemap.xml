@@ -1,32 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://team-neuron-science-hub.vercel.app/</loc>
+    <loc>https://www.teamneuron.blog/</loc>
     <priority>1.0</priority>
     <changefreq>daily</changefreq>
   </url>
   <url>
-    <loc>https://team-neuron-science-hub.vercel.app/articles</loc>
+    <loc>https://www.teamneuron.blog/articles</loc>
     <priority>0.9</priority>
     <changefreq>daily</changefreq>
   </url>
   <url>
-    <loc>https://team-neuron-science-hub.vercel.app/discussions</loc>
+    <loc>https://www.teamneuron.blog/discussions</loc>
     <priority>0.8</priority>
     <changefreq>daily</changefreq>
   </url>
   <url>
-    <loc>https://team-neuron-science-hub.vercel.app/featured</loc>
+    <loc>https://www.teamneuron.blog/featured</loc>
     <priority>0.8</priority>
     <changefreq>weekly</changefreq>
   </url>
   <url>
-    <loc>https://team-neuron-science-hub.vercel.app/collaborate</loc>
+    <loc>https://www.teamneuron.blog/collaborate</loc>
     <priority>0.7</priority>
     <changefreq>monthly</changefreq>
   </url>
   <url>
-    <loc>https://team-neuron-science-hub.vercel.app/profile</loc>
+    <loc>https://www.teamneuron.blog/profile</loc>
     <priority>0.6</priority>
     <changefreq>monthly</changefreq>
   </url>

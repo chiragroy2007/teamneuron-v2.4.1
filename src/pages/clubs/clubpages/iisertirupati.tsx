@@ -71,8 +71,16 @@ const IiserTirupatiClub = () => {
         const count = membersData ? membersData.length : 0;
 
         setMemberCount(count);
-        setPosts(postsData || []);
-        setMembers(membersData || []);
+        // Check if user is in members list (fallback/double-check)
+        if (user && membersData) {
+          const userInList = membersData.some(m =>
+            (m.user?.id === user.id) || (m.user_id === user.id)
+          );
+
+          if (userInList) {
+            setIsMember(true);
+          }
+        }
       } catch (error) {
         console.error("Error loading club data:", error);
       } finally {
@@ -105,13 +113,28 @@ const IiserTirupatiClub = () => {
       }
 
       // Refresh members list
-      const membersData = await api.clubs.getMembers(club.id);
-      setMembers(membersData || []);
-    } catch (error) {
+      try {
+        const membersData = await api.clubs.getMembers(club.id);
+        setMembers(membersData || []);
+      } catch (refreshError) {
+        console.error("Error refreshing members list:", refreshError);
+      }
+
+    } catch (error: any) {
       console.error("Error updating membership:", error);
-      // Revert on error
-      setIsMember((prev) => !prev);
-      setMemberCount((prev) => prev);
+      console.log("Error details:", JSON.stringify(error));
+
+      // Smart error handling
+      if (error?.error === 'Already a member' || error?.message === 'Already a member') {
+        console.log("Caught 'Already a member'. Forcing joined state.");
+        setIsMember(true);
+        // Force refresh members just in case
+        api.clubs.getMembers(club.id).then(d => setMembers(d || []));
+      } else {
+        // Revert on other errors
+        setIsMember((prev) => !prev);
+        setMemberCount((prev) => prev);
+      }
     }
   };
 
@@ -401,6 +424,7 @@ const IiserTirupatiClub = () => {
               </Card>
             </div>
           </div>
+
         </div>
       </div>
     </Layout>

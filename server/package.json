@@ -5,7 +5,7 @@
     "main": "src/index.ts",
     "scripts": {
         "dev": "nodemon src/index.ts",
-        "build": "tsc && copy src\\db\\schema.sql dist\\db\\schema.sql",
+        "build": "tsc && cp src/db/schema.sql dist/db/schema.sql",
         "start": "node dist/index.js"
     },
     "keywords": [],

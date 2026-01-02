@@ -90,103 +90,144 @@ const CreateArticle = () => {
 
   return (
     <Layout>
-      <div className="container mx-auto px-4 py-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Create New Article</CardTitle>
-          </CardHeader>
-          <CardContent>
+      <div className="min-h-screen bg-background py-12">
+        <div className="container max-w-3xl mx-auto px-4">
+          <div className="mb-10 text-center">
+            <h1 className="text-3xl font-bold tracking-tight text-neutral-900 mb-2">Publish Article</h1>
+            <p className="text-neutral-500 text-sm max-w-md mx-auto">Share your research findings, insights, or protocols with the community.</p>
+          </div>
+
+          <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-8">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+
+                {/* Title */}
                 <FormField
                   control={form.control}
                   name="title"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Title</FormLabel>
+                      <FormLabel className="uppercase text-xs font-bold text-neutral-700">Title</FormLabel>
                       <FormControl>
-                        <Input placeholder="Article Title" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="content"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Content</FormLabel>
-                      <FormControl>
-                        <RichTextEditor
-                          content={field.value}
-                          onChange={field.onChange}
-                          placeholder="Write your article here..."
-                          className="min-h-[400px]"
+                        <Input
+                          placeholder="Article Title"
+                          {...field}
+                          className="h-12 text-lg font-medium border-neutral-200 focus:border-neutral-900 transition-colors placeholder:text-neutral-300"
                         />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+
+                {/* Excerpt */}
                 <FormField
                   control={form.control}
                   name="excerpt"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Excerpt</FormLabel>
+                      <FormLabel className="uppercase text-xs font-bold text-neutral-700">Abstract / Summary</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="A short summary of the article" {...field} />
+                        <Textarea
+                          placeholder="A brief summary of your article..."
+                          {...field}
+                          className="min-h-[80px] border-neutral-200 focus:border-neutral-900 transition-colors placeholder:text-neutral-300 resize-none"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={form.control}
-                  name="category_id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Category</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="category_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="uppercase text-xs font-bold text-neutral-700">Category</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="h-10 border-neutral-200 focus:border-neutral-900">
+                              <SelectValue placeholder="Select a category" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {categories.map(category => (
+                              <SelectItem key={category.id} value={category.id}>
+                                {category.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="tags"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="uppercase text-xs font-bold text-neutral-700">Tags</FormLabel>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a category" />
-                          </SelectTrigger>
+                          <Input
+                            placeholder="e.g. neuroscience, AI"
+                            {...field}
+                            className="h-10 border-neutral-200 focus:border-neutral-900 placeholder:text-neutral-300"
+                          />
                         </FormControl>
-                        <SelectContent>
-                          {categories.map(category => (
-                            <SelectItem key={category.id} value={category.id}>
-                              {category.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="tags"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tags (comma-separated)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. neuroscience, AI, research" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
                 <FormField
                   control={form.control}
                   name="featured_image"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Featured Image URL</FormLabel>
+                      <FormLabel className="uppercase text-xs font-bold text-neutral-700">Featured Image URL</FormLabel>
                       <FormControl>
-                        <Input placeholder="https://example.com/image.jpg" {...field} />
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="https://..."
+                            {...field}
+                            className="h-10 border-neutral-200 focus:border-neutral-900 placeholder:text-neutral-300 flex-1"
+                          />
+                          <div className="relative">
+                            <input
+                              type="file"
+                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                              accept="image/*"
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (file && user) {
+                                  try {
+                                    // Import dynamically to avoid circular dependencies if any, 
+                                    // though direct import is fine here since utils is separate.
+                                    const { uploadImage } = await import('@/utils/imageUpload');
+                                    const result = await uploadImage(file, user.id);
+                                    if (result.success && result.url) {
+                                      field.onChange(result.url);
+                                      toast({ title: 'Image uploaded', description: 'Featured image set successfully' });
+                                    } else {
+                                      toast({ title: 'Upload failed', description: result.error, variant: 'destructive' });
+                                    }
+                                  } catch (err) {
+                                    console.error(err);
+                                    toast({ title: 'Error', description: 'Failed to upload image', variant: 'destructive' });
+                                  }
+                                }
+                              }}
+                            />
+                            <Button type="button" variant="outline" className="h-10 px-4 border-neutral-200">
+                              Upload
+                            </Button>
+                          </div>
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -198,6 +239,7 @@ const CreateArticle = () => {
                   name="club_id"
                   render={({ field }) => (
                     <FormItem>
+                      <FormLabel className="uppercase text-xs font-bold text-neutral-700">Publish to Club (Optional)</FormLabel>
                       <ClubSelector
                         value={field.value || ''}
                         onChange={field.onChange}
@@ -207,11 +249,37 @@ const CreateArticle = () => {
                   )}
                 />
 
-                <Button type="submit">Publish Article</Button>
+                {/* Content Editor */}
+                <FormField
+                  control={form.control}
+                  name="content"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="uppercase text-xs font-bold text-neutral-700">Content</FormLabel>
+                      <FormControl>
+                        <div className="border border-neutral-200 rounded-md overflow-hidden focus-within:border-neutral-900 transition-colors">
+                          <RichTextEditor
+                            content={field.value}
+                            onChange={field.onChange}
+                            placeholder="Write your article here..."
+                            className="min-h-[400px] border-none focus:ring-0"
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="flex justify-end pt-6 border-t border-neutral-100">
+                  <Button type="submit" className="bg-neutral-900 hover:bg-neutral-800 text-white min-w-[150px]">
+                    Publish Article
+                  </Button>
+                </div>
               </form>
             </Form>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </Layout>
   );

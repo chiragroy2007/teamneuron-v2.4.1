@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import CollaboratorCard from '../components/CollaboratorCard';
 import { api } from '../lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { Badge } from '../components/ui/badge';
 import { Separator } from '../components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Layout as LayoutComponent } from '../components/Layout/Layout';
+import { useToast } from '../hooks/use-toast';
 import {
   User,
   GraduationCap,
@@ -21,23 +22,28 @@ import {
   Edit,
   Save,
   X,
-  UserPlus,
   Target,
   BookOpen,
   Globe,
   Briefcase,
-  Plus
+  Plus,
+  Filter
 } from 'lucide-react';
 import Layout from '../components/Layout/Layout';
 
 const Collaborate: React.FC = () => {
   const { user } = useAuth();
-  const [profile, setProfile] = useState<any | null>(null); // Changed to any as Tables is removed
+  const [profile, setProfile] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
-  const [collaborators, setCollaborators] = useState<any[]>([]); // Changed to any as Tables is removed
+  const [collaborators, setCollaborators] = useState<any[]>([]);
   const [isEditing, setIsEditing] = useState(false);
 
+  // Filter States
+  const [selectedRole, setSelectedRole] = useState<string>('All');
+  const [searchQuery, setSearchQuery] = useState('');
+
   // Form state
+  // ... (keeping form state simplified for brevity, assume similar structure as before but simplified visually)
   const [role, setRole] = useState('');
   const [education, setEducation] = useState('');
   const [linkedinUrl, setLinkedinUrl] = useState('');
@@ -57,7 +63,7 @@ const Collaborate: React.FC = () => {
 
         if (data) {
           setProfile(data);
-          // Pre-fill form if data exists
+          // Pre-fill form
           setRole(data.role || '');
           setEducation(data.education || '');
           setLinkedinUrl(data.linkedin_url || '');
@@ -81,10 +87,14 @@ const Collaborate: React.FC = () => {
     const fetchCollaborators = async () => {
       if (!user) return;
       try {
-        const data = await api.users.list(50); // Fetch generic list for now
-        // Filter out current user on client side if needed, or api returns all users
+        const data = await api.users.list(50);
         if (data) {
-          setCollaborators(data.filter((p: any) => p.user_id !== user.id));
+          setCollaborators(data.filter((p: any) =>
+            p.user_id !== user.id &&
+            !p.full_name?.toLowerCase().includes('lovable') &&
+            !p.username?.toLowerCase().includes('lovable') &&
+            !p.full_name?.toLowerCase().includes('bot')
+          ));
         }
       } catch (error) {
         console.error('Error fetching collaborators:', error);
@@ -93,297 +103,164 @@ const Collaborate: React.FC = () => {
     fetchCollaborators();
   }, [user]);
 
+  // Matchmaking Logic (Same as before)
+  const processedCollaborators = useMemo(() => {
+    if (!profile) return collaborators;
+
+    return collaborators.map(c => {
+      let score = 0;
+      let maxScore = 0;
+
+      // Role Match
+      if (profile.role && c.role && profile.role !== c.role) score += 10;
+      maxScore += 10;
+
+      // Interest Match
+      const myInterests = new Set(profile.interests || []);
+      const theirInterests = c.interests || [];
+      const commonInterests = theirInterests.filter((i: string) => myInterests.has(i));
+      score += commonInterests.length * 5;
+      maxScore += (Math.max(myInterests.size, theirInterests.length) || 1) * 5;
+
+      // Skill Match
+      const mySkills = new Set(profile.skills || []);
+      const theirSkills = c.skills || [];
+      const commonSkills = theirSkills.filter((s: string) => mySkills.has(s));
+      score += commonSkills.length * 2;
+      maxScore += (Math.max(mySkills.size, theirSkills.length) || 1) * 2;
+
+      const normalized = Math.min(95, Math.max(10, Math.round((score / (maxScore || 1)) * 100)));
+      return { ...c, matchScore: normalized };
+    }).sort((a, b) => b.matchScore - a.matchScore);
+  }, [collaborators, profile]);
+
+  const filteredCollaborators = useMemo(() => {
+    return processedCollaborators.filter(c => {
+      const matchesRole = selectedRole === 'All' || c.role === selectedRole;
+      const matchesSearch = c.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.interests?.some((i: string) => i.toLowerCase().includes(searchQuery.toLowerCase()));
+      return matchesRole && matchesSearch;
+    });
+  }, [processedCollaborators, selectedRole, searchQuery]);
+
+  const { toast } = useToast();
+  const [saving, setSaving] = useState(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
 
     try {
-      const updates = {
-        role,
-        education,
-        linkedin_url: linkedinUrl,
-        interests,
-        skills,
-        collaboration_preferences: collaborationPreferences,
-        availability,
-        current_projects: currentProjects,
-        bio,
-        // updated_at: new Date().toISOString(), // handled by DB or ignored
-      };
-
-      const result = await api.profiles.update(updates);
-
-      if (result.error) {
-        throw new Error(result.error);
+      if (!role) {
+        toast({
+          title: "Missing Information",
+          description: "Please select a Role to complete your profile.",
+          variant: "destructive",
+        });
+        return;
       }
+      setSaving(true);
+      const updates = { role, education, linkedin_url: linkedinUrl, interests, skills, collaboration_preferences: collaborationPreferences, availability, current_projects: currentProjects, bio };
+      const result = await api.profiles.update(updates);
+      if (result.error) throw new Error(result.error);
 
-      // Re-fetch profile to update the UI
       const data = await api.auth.me();
-
       if (data) {
         setProfile(data);
-        setIsEditing(false); // Exit edit mode after successful update
-        alert('Profile updated successfully!');
+        setIsEditing(false);
+        toast({
+          title: "Profile Updated",
+          description: "Your researcher profile has been successfully updated.",
+          className: "bg-neutral-900 text-white border-neutral-800",
+        });
       }
     } catch (error) {
       console.error('Error updating profile:', error);
-      alert('Failed to update profile.');
+      toast({
+        title: "Update Failed",
+        description: "Failed to update profile. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
     }
   };
 
   if (loading) {
     return (
       <Layout>
-        <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-          <div className="container mx-auto px-4 py-8">
-            <div className="flex items-center justify-center min-h-[400px]">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                <p className="text-gray-600">Loading collaboration hub...</p>
-              </div>
-            </div>
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-900"></div>
+            <p className="text-neutral-500 text-xs uppercase tracking-wider">Loading Network...</p>
           </div>
         </div>
       </Layout>
-    );
+    )
   }
 
-  // If profile is incomplete or user is in edit mode, show the form.
+  // Profile Edit View (kept simple)
   if (isEditing || !profile || !profile.role) {
     return (
       <Layout>
-        <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-          <div className="container mx-auto px-4 py-8">
-            {/* Header Section */}
-            <div className="text-center mb-12">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-800 rounded-full mb-4">
-                <UserPlus className="w-8 h-8 text-white" />
-              </div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-4">
-                {isEditing ? 'Update Your Profile' : 'Join Our Research Community'}
-              </h1>
-              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                Share your expertise and interests to connect with like-minded researchers and collaborators
-              </p>
+        <div className="min-h-screen bg-background py-12">
+          <div className="container max-w-2xl mx-auto px-4">
+            <div className="mb-8 text-center">
+              <h1 className="text-2xl font-bold tracking-tight text-neutral-900 mb-2">Researcher Profile</h1>
+              <p className="text-neutral-500 text-sm">Complete your details to enable matchmaking</p>
             </div>
 
-            {/* Profile Form */}
-            <Card className="max-w-4xl mx-auto shadow-xl border-0">
-              <CardHeader className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-white rounded-t-lg">
-                <CardTitle className="text-2xl font-semibold flex items-center gap-2">
-                  <User className="w-6 h-6" />
-                  Professional Profile
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-8">
-                <form onSubmit={handleSubmit} className="space-y-8">
-                  <Tabs defaultValue="basic" className="w-full">
-                    <TabsList className="grid w-full grid-cols-3">
-                      <TabsTrigger value="basic" className="flex items-center gap-2">
-                        <User className="w-4 h-4" />
-                        Basic Info
-                      </TabsTrigger>
-                      <TabsTrigger value="expertise" className="flex items-center gap-2">
-                        <BookOpen className="w-4 h-4" />
-                        Expertise
-                      </TabsTrigger>
-                      <TabsTrigger value="collaboration" className="flex items-center gap-2">
-                        <Target className="w-4 h-4" />
-                        Collaboration
-                      </TabsTrigger>
-                    </TabsList>
+            <Card className="border border-neutral-200 shadow-sm">
+              <CardContent className="p-6">
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* Basic Fields */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-neutral-700 uppercase">Role</label>
+                      <select value={role} onChange={e => setRole(e.target.value)} className="w-full h-9 rounded-md border border-neutral-200 text-sm px-3 focus:outline-none focus:border-neutral-900 transition-colors">
+                        <option value="">Select Role</option>
+                        <option value="Student">Student</option>
+                        <option value="Professor">Professor</option>
+                        <option value="Researcher">Researcher</option>
+                        <option value="Hobbyist">Hobbyist</option>
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-neutral-700 uppercase">Education</label>
+                      <input value={education} onChange={e => setEducation(e.target.value)} className="w-full h-9 rounded-md border border-neutral-200 text-sm px-3 focus:outline-none focus:border-neutral-900 transition-colors" placeholder="Institution" />
+                    </div>
+                  </div>
 
-                    <TabsContent value="basic" className="space-y-6 mt-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Role */}
-                        <div className="space-y-2">
-                          <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                            <GraduationCap className="w-4 h-4" />
-                            Professional Role
-                          </label>
-                          <select
-                            value={role}
-                            onChange={(e) => setRole(e.target.value)}
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all"
-                          >
-                            <option value="">Select your role</option>
-                            <option value="Student">Student</option>
-                            <option value="Professor">Professor</option>
-                            <option value="Researcher">Researcher</option>
-                            <option value="Hobbyist">Hobbyist</option>
-                          </select>
-                        </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-neutral-700 uppercase">Bio</label>
+                    <textarea value={bio} onChange={e => setBio(e.target.value)} rows={3} className="w-full rounded-md border border-neutral-200 text-sm p-3 focus:outline-none focus:border-neutral-900 transition-colors" placeholder="Short professional bio" />
+                  </div>
 
-                        {/* Education */}
-                        <div className="space-y-2">
-                          <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                            <BookOpen className="w-4 h-4" />
-                            Education Background
-                          </label>
-                          <input
-                            type="text"
-                            value={education}
-                            onChange={(e) => setEducation(e.target.value)}
-                            placeholder="e.g., PhD in Neuroscience, MIT"
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all"
-                          />
-                        </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-neutral-700 uppercase">Interests (Comma separated)</label>
+                    <input value={interests.join(', ')} onChange={e => setInterests(e.target.value.split(',').map(s => s.trim()))} className="w-full h-9 rounded-md border border-neutral-200 text-sm px-3 focus:outline-none focus:border-neutral-900 transition-colors" placeholder="e.g. Neuroscience, ML" />
+                  </div>
 
-                        {/* LinkedIn URL */}
-                        <div className="space-y-2">
-                          <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                            <Linkedin className="w-4 h-4" />
-                            LinkedIn Profile
-                          </label>
-                          <input
-                            type="url"
-                            value={linkedinUrl}
-                            onChange={(e) => setLinkedinUrl(e.target.value)}
-                            placeholder="https://linkedin.com/in/yourprofile"
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all"
-                          />
-                        </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-neutral-700 uppercase">Skills (Comma separated)</label>
+                    <input value={skills.join(', ')} onChange={e => setSkills(e.target.value.split(',').map(s => s.trim()))} className="w-full h-9 rounded-md border border-neutral-200 text-sm px-3 focus:outline-none focus:border-neutral-900 transition-colors" placeholder="e.g. Python, R" />
+                  </div>
 
-                        {/* Availability */}
-                        <div className="space-y-2">
-                          <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                            <Clock className="w-4 h-4" />
-                            Weekly Availability
-                          </label>
-                          <input
-                            type="text"
-                            value={availability}
-                            onChange={(e) => setAvailability(e.target.value)}
-                            placeholder="e.g., 5-10 hours/week"
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all"
-                          />
-                        </div>
-                      </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-neutral-700 uppercase">LinkedIn</label>
+                    <input value={linkedinUrl} onChange={e => setLinkedinUrl(e.target.value)} className="w-full h-9 rounded-md border border-neutral-200 text-sm px-3 focus:outline-none focus:border-neutral-900 transition-colors" placeholder="https://linkedin.com/..." />
+                  </div>
 
-                      {/* Bio */}
-                      <div className="space-y-2">
-                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                          <FileText className="w-4 h-4" />
-                          Professional Bio
-                        </label>
-                        <textarea
-                          value={bio}
-                          onChange={(e) => setBio(e.target.value)}
-                          rows={4}
-                          placeholder="Tell us about your background, research interests, and what drives your passion for science..."
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                        />
-                      </div>
-                    </TabsContent>
-
-                    <TabsContent value="expertise" className="space-y-6 mt-6">
-                      {/* Current Projects */}
-                      <div className="space-y-2">
-                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                          <Zap className="w-4 h-4" />
-                          Current Projects
-                        </label>
-                        <textarea
-                          value={currentProjects}
-                          onChange={(e) => setCurrentProjects(e.target.value)}
-                          rows={4}
-                          placeholder="Describe your ongoing research projects, publications, or initiatives..."
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                        />
-                      </div>
-
-                      {/* Interests */}
-                      <div className="space-y-2">
-                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                          <Heart className="w-4 h-4" />
-                          Research Interests
-                        </label>
-                        <input
-                          type="text"
-                          value={interests.join(', ')}
-                          onChange={(e) => setInterests(e.target.value.split(',').map(s => s.trim()))}
-                          placeholder="e.g., Machine Learning, Neuroscience, Data Analysis"
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                        />
-                        <p className="text-xs text-gray-500">Separate multiple interests with commas</p>
-                      </div>
-
-                      {/* Skills */}
-                      <div className="space-y-2">
-                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                          <Globe className="w-4 h-4" />
-                          Technical Skills
-                        </label>
-                        <input
-                          type="text"
-                          value={skills.join(', ')}
-                          onChange={(e) => setSkills(e.target.value.split(',').map(s => s.trim()))}
-                          placeholder="e.g., Python, R, MATLAB, Statistics, Deep Learning"
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                        />
-                        <p className="text-xs text-gray-500">Separate multiple skills with commas</p>
-                      </div>
-                    </TabsContent>
-
-                    <TabsContent value="collaboration" className="space-y-6 mt-6">
-                      {/* Collaboration Preferences */}
-                      <div className="space-y-4">
-                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                          <Users className="w-4 h-4" />
-                          I'm looking for collaboration in:
-                        </label>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {['Co-authoring papers', 'Side projects', 'Mentorship', 'Quick help', 'Long-term collaboration'].map(pref => (
-                            <Card key={pref} className={`p-4 cursor-pointer transition-all hover:shadow-md ${collaborationPreferences.includes(pref)
-                              ? 'border-gray-700 bg-gray-50'
-                              : 'border-gray-200 hover:border-gray-300'
-                              }`}>
-                              <div className="flex items-center space-x-3">
-                                <input
-                                  type="checkbox"
-                                  id={pref}
-                                  checked={collaborationPreferences.includes(pref)}
-                                  onChange={(e) => {
-                                    if (e.target.checked) {
-                                      setCollaborationPreferences([...collaborationPreferences, pref]);
-                                    } else {
-                                      setCollaborationPreferences(collaborationPreferences.filter(p => p !== pref));
-                                    }
-                                  }}
-                                  className="h-4 w-4 text-gray-600 border-gray-300 rounded focus:ring-gray-500"
-                                />
-                                <label htmlFor={pref} className="text-sm font-medium text-gray-900 cursor-pointer">
-                                  {pref}
-                                </label>
-                              </div>
-                            </Card>
-                          ))}
-                        </div>
-                      </div>
-                    </TabsContent>
-                  </Tabs>
-
-                  <Separator />
-
-                  {/* Action Buttons */}
-                  <div className="flex items-center justify-end gap-4">
-                    {isEditing && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setIsEditing(false)}
-                        className="flex items-center gap-2"
-                      >
-                        <X className="w-4 h-4" />
-                        Cancel
-                      </Button>
-                    )}
-                    <Button
-                      type="submit"
-                      className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 hover:from-black hover:via-gray-900 hover:to-black flex items-center gap-2"
-                    >
-                      <Save className="w-4 h-4" />
-                      {isEditing ? 'Update Profile' : 'Save Profile'}
+                  <div className="flex justify-end gap-3 pt-4 border-t border-neutral-100">
+                    {isEditing && <Button type="button" variant="ghost" onClick={() => setIsEditing(false)} className="text-sm">Cancel</Button>}
+                    <Button type="submit" disabled={saving} className="bg-neutral-900 hover:bg-neutral-800 text-white text-sm">
+                      {saving ? (
+                        <>
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-2"></div>
+                          Saving...
+                        </>
+                      ) : 'Save Profile'}
                     </Button>
                   </div>
                 </form>
@@ -395,152 +272,99 @@ const Collaborate: React.FC = () => {
     );
   }
 
-  // If profile is complete and not in edit mode, show the collaborators view.
+  // Main View
   return (
     <Layout>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-        <div className="container mx-auto px-4 py-8">
+      <div className="min-h-screen bg-background text-foreground">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 py-8">
 
-          {/* Profile Summary Card */}
-          {profile && (
-            <Card className="max-w-4xl mx-auto mb-12 shadow-lg border-0">
-              <CardHeader className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-white flex flex-row items-center justify-between">
-                <CardTitle className="text-xl font-semibold flex items-center gap-2">
-                  <User className="w-5 h-5" />
-                  Your Profile Summary
-                </CardTitle>
-                <div className="flex items-center gap-2">
-                  <Link to="/projects">
-                    <Button variant="secondary" size="sm" className="flex items-center gap-2">
-                      <Briefcase className="w-4 h-4" />
-                      Browse Projects
-                    </Button>
-                  </Link>
-                  <Link to="/projects/new">
-                    <Button size="sm" className="flex items-center gap-2">
-                      <Plus className="w-4 h-4" />
-                      Post Opportunity
-                    </Button>
-                  </Link>
-                  <Button
-                    onClick={() => setIsEditing(true)}
-                    variant="outline"
-                    size="sm"
-                    className="flex items-center gap-2 bg-white/10 hover:bg-white/20 border-white/20"
-                  >
-                    <Edit className="w-4 h-4" />
-                    Edit Profile
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="text-center">
-                    <div className="inline-flex items-center justify-center w-12 h-12 bg-gray-100 rounded-full mb-2">
-                      <GraduationCap className="w-6 h-6 text-gray-600" />
-                    </div>
-                    <h3 className="font-semibold text-gray-900">{profile.role || 'Not specified'}</h3>
-                    <p className="text-sm text-gray-600">{profile.education || 'Education not specified'}</p>
-                  </div>
-                  <div className="text-center">
-                    <div className="inline-flex items-center justify-center w-12 h-12 bg-gray-100 rounded-full mb-2">
-                      <Heart className="w-6 h-6 text-gray-600" />
-                    </div>
-                    <h3 className="font-semibold text-gray-900">{profile.interests?.length || 0} Interests</h3>
-                    <p className="text-sm text-gray-600">Research areas</p>
-                  </div>
-                  <div className="text-center">
-                    <div className="inline-flex items-center justify-center w-12 h-12 bg-gray-100 rounded-full mb-2">
-                      <Zap className="w-6 h-6 text-gray-600" />
-                    </div>
-                    <h3 className="font-semibold text-gray-900">{profile.skills?.length || 0} Skills</h3>
-                    <p className="text-sm text-gray-600">Technical expertise</p>
-                  </div>
-                </div>
-
-                {profile.bio && (
-                  <div className="mt-6 pt-6 border-t border-gray-200">
-                    <p className="text-gray-700 text-center italic">"{profile.bio}"</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Collaborators Section */}
-          <div className="max-w-6xl mx-auto">
-            <div className="flex items-center gap-3 mb-8">
-              <div className="inline-flex items-center justify-center w-10 h-10 bg-gray-100 rounded-full">
-                <Search className="w-5 h-5 text-gray-600" />
+          {/* Header */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 border-b border-neutral-200 pb-6">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight text-neutral-900">Find Collaborators</h1>
+              <p className="text-sm text-neutral-500 mt-1">Connect with {collaborators.length} researchers in the community</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 text-xs text-neutral-500 bg-neutral-100 px-3 py-1.5 rounded-full">
+                <span className="font-semibold text-neutral-900">{profile.interests?.length}</span> Interests
+                <span className="w-1 h-3 border-r border-neutral-300 mx-1"></span>
+                <span className="font-semibold text-neutral-900">{profile.skills?.length}</span> Skills
               </div>
+              <Button onClick={() => setIsEditing(true)} size="sm" variant="outline" className="h-8 text-xs border-neutral-300 text-neutral-600 hover:text-neutral-900">
+                <Edit className="mr-2 h-3.5 w-3.5" />
+                Edit Profile
+              </Button>
+              <Link to="/projects/new">
+                <Button size="sm" className="h-8 text-xs bg-neutral-900 hover:bg-neutral-800 text-white">
+                  <Plus className="mr-2 h-3.5 w-3.5" />
+                  Post
+                </Button>
+              </Link>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            {/* Sidebar Filters */}
+            <div className="lg:col-span-1 space-y-8">
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-neutral-400" />
+                <input
+                  type="text"
+                  placeholder="Search people..."
+                  className="w-full h-9 pl-9 pr-3 rounded-md bg-white border border-neutral-200 text-sm focus:outline-none focus:border-neutral-900 transition-colors"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+
+              {/* Roles */}
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">Discover Collaborators</h2>
-                <p className="text-gray-600">Connect with researchers who share your interests and expertise</p>
+                <h3 className="text-xs font-bold text-neutral-900 uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <Filter className="w-3 h-3" /> Role
+                </h3>
+                <div className="space-y-1">
+                  {['All', 'Student', 'Professor', 'Researcher', 'Hobbyist'].map(r => (
+                    <button
+                      key={r}
+                      onClick={() => setSelectedRole(r)}
+                      className={`w-full text-left px-3 py-1.5 text-xs rounded-md transition-all ${selectedRole === r
+                        ? 'bg-neutral-900 text-white font-medium shadow-sm'
+                        : 'text-neutral-600 hover:bg-neutral-100'
+                        }`}
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
-            {collaborators.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {collaborators.map(collaborator => (
-                  <div key={collaborator.id} className="transform transition-all hover:scale-105">
-                    <CollaboratorCard profile={collaborator} />
+            {/* Main Grid */}
+            <div className="lg:col-span-3">
+              {filteredCollaborators.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredCollaborators.map((collaborator) => (
+                    <div key={collaborator.id} className="h-full">
+                      <CollaboratorCard profile={collaborator} matchScore={collaborator.matchScore} />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-20 bg-neutral-50 rounded-lg border border-neutral-100 border-dashed">
+                  <div className="bg-white border border-neutral-200 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm">
+                    <Search className="w-5 h-5 text-neutral-400" />
                   </div>
-                ))}
-              </div>
-            ) : (
-              <Card className="text-center py-12">
-                <CardContent>
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
-                    <Users className="w-8 h-8 text-gray-400" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">No Collaborators Yet</h3>
-                  <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                    Be among the first to join our research community! More collaborators will appear as our network grows.
+                  <h3 className="text-sm font-semibold text-neutral-900">No matches found</h3>
+                  <p className="text-xs text-neutral-500 mt-1 max-w-xs mx-auto">
+                    Try adjusting your filters or search terms.
                   </p>
-                  <Button
-                    onClick={() => setIsEditing(true)}
-                    className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 hover:from-black hover:via-gray-900 hover:to-black"
-                  >
-                    Complete Your Profile
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-
-          {/* Call to Action Section */}
-          <div className="max-w-4xl mx-auto mt-16">
-            <Card className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-white border-0">
-              <CardContent className="p-8 text-center">
-                <h3 className="text-2xl font-bold mb-4">Ready to Collaborate?</h3>
-                <p className="text-gray-300 mb-6 max-w-2xl mx-auto">
-                  Join our growing community of researchers and scientists. Share your expertise,
-                  discover new opportunities, and advance scientific knowledge together.
-                </p>
-                <div className="flex items-center justify-center gap-4">
-                  <Link to="/projects">
-                    <Button variant="secondary" className="bg-white text-gray-900 hover:bg-gray-100 flex items-center gap-2">
-                      <Briefcase className="w-4 h-4" />
-                      Browse Projects
-                    </Button>
-                  </Link>
-                  <Link to="/projects/new">
-                    <Button className="flex items-center gap-2">
-                      <Plus className="w-4 h-4" />
-                      Post Opportunity
-                    </Button>
-                  </Link>
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsEditing(true)}
-                    className="flex items-center gap-2"
-                  >
-                    <Edit className="w-4 h-4" />
-                    Update Profile
+                  <Button onClick={() => { setSelectedRole('All'); setSearchQuery(''); }} variant="link" className="mt-2 text-xs text-neutral-900">
+                    Clear Filters
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
+              )}
+            </div>
           </div>
         </div>
       </div>

@@ -422,7 +422,7 @@ const Index = () => {
                       <p className="text-xs text-muted-foreground">
                         Join the premier research community for IISER Tirupati.
                       </p>
-                      <Link to="/clubs/iisertirupati">
+                      <Link to="/clubs/iiser-tirupati">
                         <Button
                           size="sm"
                           variant="outline"

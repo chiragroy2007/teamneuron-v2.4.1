@@ -13,7 +13,7 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://team-neuron-science-hub.vercel.app/sitemap.xml
+Sitemap: https://www.teamneuron.blog/sitemap.xml
 
 # Branding for search engines
 # Site: TeamNeuron
