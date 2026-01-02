@@ -1,6 +1,6 @@
-# Team Neuron Science Hub - Dashboard
+# Team Neuron - Dashboard
 
-This is the dashboard for Team Neuron Science Hub, featuring a React frontend and a Node.js/SQLite backend.
+This is the dashboard for Team Neuron Science Hub, featuring a React frontend and a Node.js/SQLite backend created for dev use by Chirag.
 
 ## Deployment Guide (Ubuntu VPS)
 
