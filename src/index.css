@@ -1,13 +1,16 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here.
 All colors MUST be HSL.
 */
 
 @layer base {
   :root {
+    --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     --background: 0 0% 98%;
     --foreground: 224 71% 4%;
 
@@ -114,7 +117,7 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground font-medium;
+    @apply bg-background text-foreground font-sans;
   }
 }
 
@@ -122,15 +125,15 @@ All colors MUST be HSL.
   .glass-card {
     @apply bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--glass-border)] rounded-lg shadow-[var(--shadow-neural)];
   }
-  
+
   .neural-gradient {
     background: var(--neural-gradient);
   }
-  
+
   .neural-gradient-soft {
     background: var(--neural-gradient-soft);
   }
-  
+
   .text-neural {
     @apply bg-gradient-to-r from-[hsl(var(--neural-blue))] to-[hsl(var(--neural-cyan))] bg-clip-text text-transparent;
   }

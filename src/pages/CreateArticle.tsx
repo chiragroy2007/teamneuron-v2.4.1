@@ -14,6 +14,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import Layout from '@/components/Layout/Layout';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 import RichTextEditor from '@/components/ui/rich-text-editor';
 import { ClubSelector } from '@/components/clubs/ClubSelector';
@@ -32,7 +34,7 @@ type ArticleFormValues = z.infer<typeof articleSchema>;
 
 const CreateArticle = () => {
   const [categories, setCategories] = useState<any[]>([]);
-  const [profile, setProfile] = useState<any>(null);
+  const [isPreviewing, setIsPreviewing] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -41,6 +43,12 @@ const CreateArticle = () => {
     resolver: zodResolver(articleSchema),
     defaultValues: {
       club_id: '',
+      title: '',
+      content: '',
+      excerpt: '',
+      category_id: '',
+      tags: '',
+      featured_image: ''
     },
   });
 
@@ -55,6 +63,14 @@ const CreateArticle = () => {
     };
     fetchCategories();
   }, []);
+
+  const handleReview = async () => {
+    const isValid = await form.trigger();
+    if (isValid) {
+      setIsPreviewing(true);
+      window.scrollTo(0, 0);
+    }
+  };
 
   const onSubmit = async (data: ArticleFormValues) => {
     if (!user) {
@@ -88,6 +104,95 @@ const CreateArticle = () => {
     }
   };
 
+  const getCategoryName = (id: string) => categories.find(c => c.id === id)?.name || 'Category';
+
+  if (isPreviewing) {
+    const values = form.getValues();
+    const tags = values.tags ? values.tags.split(',').map(t => t.trim()) : [];
+
+    return (
+      <Layout>
+        <div className="min-h-screen bg-background py-16">
+          <div className="container max-w-3xl mx-auto px-4">
+
+            <div className="mb-8 flex justify-between items-center bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+              <div className="flex items-center gap-2 text-yellow-800">
+                <span className="font-bold">Preview Mode:</span>
+                <span>Review your article before publishing.</span>
+              </div>
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={() => setIsPreviewing(false)}>
+                  Back to Edit
+                </Button>
+                <Button onClick={form.handleSubmit(onSubmit)} className="bg-neutral-900 text-white">
+                  Confirm & Publish
+                </Button>
+              </div>
+            </div>
+
+            <article className="prose prose-neutral max-w-none bg-white p-8 rounded-xl shadow-sm border border-neutral-100">
+              <header className="mb-10 text-center not-prose">
+                <div className="flex justify-center mb-6">
+                  <Badge
+                    variant="outline"
+                    className="rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider border-neutral-200 text-neutral-600 bg-neutral-50"
+                  >
+                    {getCategoryName(values.category_id)}
+                  </Badge>
+                </div>
+
+                <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-neutral-900 mb-6 leading-tight">
+                  {values.title}
+                </h1>
+
+                <div className="flex items-center justify-center gap-6 text-sm text-neutral-500">
+                  <div className="flex items-center gap-2">
+                    <Avatar className="h-8 w-8 ring-2 ring-white shadow-sm">
+                      <AvatarImage src={user?.avatar_url || ''} />
+                      <AvatarFallback className="bg-neutral-100 text-neutral-600">{user?.full_name?.charAt(0) || user?.username?.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <span className="font-medium text-neutral-900">{user?.full_name || user?.username}</span>
+                  </div>
+                  <div className="w-1 h-1 rounded-full bg-neutral-300"></div>
+                  <div className="flex items-center gap-2">
+                    <time>{new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</time>
+                  </div>
+                </div>
+              </header>
+
+              {values.featured_image && (
+                <div className="mb-12 rounded-xl overflow-hidden border border-neutral-100 shadow-sm">
+                  <img src={values.featured_image} alt={values.title} className="w-full h-auto object-cover" />
+                </div>
+              )}
+
+              <div className="mt-8">
+                <RichTextEditor
+                  content={values.content}
+                  editable={false}
+                  className="border-none focus:ring-0 [&_.ProseMirror]:px-0 [&_.ProseMirror]:text-lg [&_.ProseMirror]:leading-relaxed [&_.ProseMirror]:text-neutral-800"
+                />
+              </div>
+
+              {tags.length > 0 && (
+                <div className="mt-16 pt-8 border-t border-neutral-100 not-prose">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500 mb-4">Focus Areas</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {tags.map((tag, index) => (
+                      <Badge key={index} variant="secondary" className="bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded-md px-3 py-1 font-normal">
+                        #{tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </article>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div className="min-h-screen bg-background py-12">
@@ -99,7 +204,7 @@ const CreateArticle = () => {
 
           <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-8">
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+              <form className="space-y-8">
 
                 {/* Title */}
                 <FormField
@@ -206,8 +311,6 @@ const CreateArticle = () => {
                                 const file = e.target.files?.[0];
                                 if (file && user) {
                                   try {
-                                    // Import dynamically to avoid circular dependencies if any, 
-                                    // though direct import is fine here since utils is separate.
                                     const { uploadImage } = await import('@/utils/imageUpload');
                                     const result = await uploadImage(file, user.id);
                                     if (result.success && result.url) {
@@ -272,8 +375,8 @@ const CreateArticle = () => {
                 />
 
                 <div className="flex justify-end pt-6 border-t border-neutral-100">
-                  <Button type="submit" className="bg-neutral-900 hover:bg-neutral-800 text-white min-w-[150px]">
-                    Publish Article
+                  <Button type="button" onClick={handleReview} className="bg-neutral-900 hover:bg-neutral-800 text-white min-w-[150px]">
+                    Review & Publish
                   </Button>
                 </div>
               </form>

@@ -55,7 +55,7 @@ const IiserTirupatiClub = () => {
         if (user) {
           const { isMember: memberStatus } = await api.clubs.isMember(
             club.id,
-            user.id,
+            user.user_id || user.id,
           );
           setIsMember(memberStatus);
         } else {
@@ -73,8 +73,9 @@ const IiserTirupatiClub = () => {
         setMemberCount(count);
         // Check if user is in members list (fallback/double-check)
         if (user && membersData) {
+          const userId = user.user_id || user.id;
           const userInList = membersData.some(m =>
-            (m.user?.id === user.id) || (m.user_id === user.id)
+            (m.user?.id === userId) || (m.user_id === userId)
           );
 
           if (userInList) {

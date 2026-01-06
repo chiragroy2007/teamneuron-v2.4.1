@@ -107,30 +107,7 @@ const Auth = () => {
               </div>
             </div>
 
-            <div className="pt-10 mt-auto">
-              <div className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm w-fit">
-                <div className="flex -space-x-3">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="w-8 h-8 rounded-full bg-neutral-800 border-2 border-black flex items-center justify-center">
-                      <User className="w-4 h-4 text-neutral-400" />
-                    </div>
-                  ))}
-                  <div className="w-8 h-8 rounded-full bg-neutral-900 border-2 border-black flex items-center justify-center text-[10px] text-white font-medium">
-                    +2k
-                  </div>
-                </div>
-                <div>
-                  <p className="text-white text-sm font-medium">Global Research Network</p>
-                  <div className="flex items-center gap-1.5">
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                    </span>
-                    <p className="text-neutral-500 text-xs">Active researchers online</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+
           </div>
         </div>
 

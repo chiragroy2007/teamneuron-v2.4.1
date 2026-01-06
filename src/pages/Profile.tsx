@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
-import { User, Edit3, Save, X, Plus, Loader2, MapPin, Link as LinkIcon, Briefcase, GraduationCap, Github, Linkedin, Globe } from 'lucide-react';
+import { User, Edit3, Save, X, Plus, Loader2, MapPin, Link as LinkIcon, Briefcase, GraduationCap, Github, Linkedin, Globe, Upload, FileText, ExternalLink } from 'lucide-react';
 import Layout from '@/components/Layout/Layout';
 
 interface Profile {
@@ -19,19 +19,21 @@ interface Profile {
   full_name: string;
   bio: string;
   avatar_url: string;
-  expertise: string[];
+  skills: string[];
   interests: string[];
   education: string;
   role: string | null;
   linkedin_url: string;
   current_projects: string;
+  cv_url: string;
 }
 
 const Profile = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
-  const [newExpertise, setNewExpertise] = useState('');
+  const [newSkill, setNewSkill] = useState('');
+  const [uploadingCV, setUploadingCV] = useState(false);
   const [newInterest, setNewInterest] = useState('');
   const { user } = useAuth();
   const { toast } = useToast();
@@ -50,13 +52,14 @@ const Profile = () => {
         setProfile({
           ...userData,
           user_id: userData.id,
-          expertise: userData.expertise || [],
+          skills: userData.skills || [],
           interests: userData.interests || [],
           bio: userData.bio || '',
           education: userData.education || '',
           role: userData.role || '',
           linkedin_url: userData.linkedin_url || '',
           current_projects: userData.current_projects || '',
+          cv_url: userData.cv_url || '',
         });
       }
     } catch (error: any) {
@@ -82,7 +85,7 @@ const Profile = () => {
       role: formData.get('role') as string,
       education: formData.get('education') as string,
       linkedin_url: formData.get('linkedin_url') as string,
-      expertise: profile.expertise,
+      skills: profile.skills,
       interests: profile.interests,
     };
 
@@ -104,7 +107,7 @@ const Profile = () => {
     }
   };
 
-  const addTag = (type: 'expertise' | 'interests', value: string, setter: (val: string) => void) => {
+  const addTag = (type: 'skills' | 'interests', value: string, setter: (val: string) => void) => {
     if (value.trim() && profile) {
       const current = profile[type] || [];
       if (!current.includes(value.trim())) {
@@ -114,10 +117,82 @@ const Profile = () => {
     }
   };
 
-  const removeTag = (type: 'expertise' | 'interests', index: number) => {
+  const removeTag = (type: 'skills' | 'interests', index: number) => {
     if (profile) {
       const updated = (profile[type] || []).filter((_, i) => i !== index);
       setProfile({ ...profile, [type]: updated });
+    }
+  };
+
+  const handleCVUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== 'application/pdf') {
+      toast({
+        title: "Invalid file type",
+        description: "Please upload a PDF file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      toast({
+        title: "File too large",
+        description: "Please upload a file smaller than 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploadingCV(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      console.log('Uploading CV file...');
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Upload failed');
+      }
+
+      const data = await response.json();
+      const cvUrl = data.url;
+      console.log('CV uploaded, URL:', cvUrl);
+
+      // Update profile with CV URL
+      console.log('Updating profile with CV URL...');
+      const updateResult = await api.profiles.update({ cv_url: cvUrl });
+      console.log('Profile update result:', updateResult);
+
+      // Update local state
+      setProfile(prev => prev ? { ...prev, cv_url: cvUrl } : null);
+
+      // Refresh profile data to ensure we have the latest
+      await fetchProfile();
+
+      toast({
+        title: "Success",
+        description: "CV uploaded successfully",
+      });
+    } catch (error: any) {
+      console.error('CV upload error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to upload CV",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingCV(false);
     }
   };
 
@@ -265,25 +340,25 @@ const Profile = () => {
                         <Textarea id="bio" name="bio" defaultValue={profile.bio || ''} rows={5} className="bg-neutral-50 border-neutral-200 resize-none" placeholder="Share your research interests..." />
                       </div>
 
-                      {/* Skills / Expertise */}
+                      {/* Skills */}
                       <div className="space-y-3">
-                        <Label>Areas of Expertise</Label>
+                        <Label>Skills</Label>
                         <div className="flex gap-2">
                           <Input
-                            value={newExpertise}
-                            onChange={(e) => setNewExpertise(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag('expertise', newExpertise, setNewExpertise))}
+                            value={newSkill}
+                            onChange={(e) => setNewSkill(e.target.value)}
+                            onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag('skills', newSkill, setNewSkill))}
                             placeholder="Add skill..."
                             className="bg-neutral-50 border-neutral-200"
                           />
-                          <Button type="button" onClick={() => addTag('expertise', newExpertise, setNewExpertise)} variant="outline">
+                          <Button type="button" onClick={() => addTag('skills', newSkill, setNewSkill)} variant="outline">
                             <Plus className="w-4 h-4" />
                           </Button>
                         </div>
                         <div className="flex flex-wrap gap-2">
-                          {profile.expertise?.map((tag, i) => (
+                          {profile.skills?.map((tag, i) => (
                             <Badge key={i} variant="secondary" className="pl-3 pr-1.5 py-1">
-                              {tag} <X className="ml-2 w-3 h-3 cursor-pointer opacity-50 hover:opacity-100" onClick={() => removeTag('expertise', i)} />
+                              {tag} <X className="ml-2 w-3 h-3 cursor-pointer opacity-50 hover:opacity-100" onClick={() => removeTag('skills', i)} />
                             </Badge>
                           ))}
                         </div>
@@ -328,13 +403,55 @@ const Profile = () => {
                       </p>
                     </div>
 
+                    {/* CV Upload Section */}
+                    <div className="border-t border-neutral-100 pt-6">
+                      <h3 className="text-sm font-bold uppercase tracking-wider text-neutral-400 mb-3">Curriculum Vitae</h3>
+                      {profile.cv_url ? (
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-3 p-3 bg-neutral-50 border border-neutral-200">
+                            <FileText className="w-5 h-5 text-neutral-600" />
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-neutral-900">CV.pdf</p>
+                              <p className="text-xs text-neutral-500">Uploaded</p>
+                            </div>
+                            <a href={profile.cv_url} target="_blank" rel="noopener noreferrer" className="text-neutral-900 hover:text-neutral-600">
+                              <ExternalLink className="w-4 h-4" />
+                            </a>
+                          </div>
+                          <label className="block">
+                            <input type="file" accept=".pdf" onChange={handleCVUpload} className="hidden" disabled={uploadingCV} />
+                            <Button type="button" variant="outline" size="sm" disabled={uploadingCV} className="w-full" onClick={(e) => e.currentTarget.previousElementSibling?.click()}>
+                              {uploadingCV ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
+                              Replace CV
+                            </Button>
+                          </label>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          <label className="block">
+                            <input type="file" accept=".pdf" onChange={handleCVUpload} className="hidden" disabled={uploadingCV} />
+                            <Button type="button" variant="outline" disabled={uploadingCV} className="w-full border-dashed border-2" onClick={(e) => e.currentTarget.previousElementSibling?.click()}>
+                              {uploadingCV ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
+                              Upload CV (PDF)
+                            </Button>
+                          </label>
+                          <div className="bg-neutral-50 border border-neutral-200 p-3 text-xs text-neutral-600">
+                            <p className="mb-1">Don't have a CV ready?</p>
+                            <a href="https://cv-generator.tools.teamneuron.blog" target="_blank" rel="noopener noreferrer" className="text-neutral-900 hover:underline font-medium inline-flex items-center gap-1">
+                              Use our free CV generator <ExternalLink className="w-3 h-3" />
+                            </a>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       <div>
-                        <h3 className="text-sm font-bold uppercase tracking-wider text-neutral-400 mb-3">Expertise</h3>
+                        <h3 className="text-sm font-bold uppercase tracking-wider text-neutral-400 mb-3">Skills</h3>
                         <div className="flex flex-wrap gap-2">
-                          {profile.expertise?.length > 0 ? profile.expertise.map((tag, i) => (
+                          {profile.skills?.length > 0 ? profile.skills.map((tag, i) => (
                             <Badge key={i} className="bg-neutral-100 text-neutral-800 hover:bg-neutral-200 border-0">{tag}</Badge>
-                          )) : <span className="text-neutral-400 italic text-sm">No expertise listed.</span>}
+                          )) : <span className="text-neutral-400 italic text-sm">No skills listed.</span>}
                         </div>
                       </div>
                       <div>

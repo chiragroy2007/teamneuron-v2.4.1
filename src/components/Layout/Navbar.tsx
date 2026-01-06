@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
+import { useChat } from '@/contexts/ChatContext';
 import { Brain, User, LogOut, Search, MessageSquare, Bot, Network, Users } from 'lucide-react';
 import {
   DropdownMenu,
@@ -16,10 +17,20 @@ import {
 const Navbar = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const { unreadCount, setIsOpen } = useChat();
 
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
+  };
+
+  const openInbox = () => {
+    // We can either navigate to /inbox if we create it, OR just open the drawer
+    // Since user asked for "inbox page", let's assume we map Navigate('/inbox') to a page that uses the same logic
+    // But for now, let's open the drawer as "Inbox"
+    setIsOpen(true);
+    // Or if we implemented /inbox:
+    navigate('/inbox');
   };
 
   return (
@@ -56,12 +67,13 @@ const Navbar = () => {
           <div className="flex items-center space-x-4">
             {user ? (
               <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" onClick={() => navigate('/tools')} className="hidden md:flex items-center space-x-2 text-neutral-300 hover:text-white hover:bg-neutral-800 transition-colors">
+                <Button variant="ghost" size="sm" onClick={() => navigate('/tools')} className="hidden md:flex items-center space-x-2 text-neutral-300 hover:text-white hover:bg-neutral-800 transition-colors relative">
                   <span className="text-sm font-medium">Tools</span>
+                  <span className="absolute top-1.5 right-1 h-1.5 w-1.5 rounded-full bg-red-500"></span>
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="flex items-center space-x-2 hover:bg-neutral-800 transition-colors">
+                    <Button variant="ghost" size="sm" className="flex items-center space-x-2 hover:bg-neutral-800 transition-colors relative">
                       <div className="w-8 h-8 bg-white/10 text-white rounded-full flex items-center justify-center border border-white/10">
                         <span className="text-xs font-medium">
                           {user.full_name?.charAt(0).toUpperCase() || user.username?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
@@ -82,6 +94,7 @@ const Navbar = () => {
                       </p>
                     </div>
                     <DropdownMenuSeparator className="bg-neutral-800" />
+                    {/* Inbox removed */}
                     <DropdownMenuItem onClick={() => navigate('/clubs')} className="cursor-pointer focus:bg-neutral-800 focus:text-white">
                       <Users className="mr-2 h-4 w-4 text-neutral-400" />
                       <span>Research Clubs</span>
@@ -100,8 +113,9 @@ const Navbar = () => {
               </div>
             ) : (
               <div className="flex items-center space-x-2">
-                <Button variant="ghost" size="sm" onClick={() => navigate('/tools')} className="text-neutral-300 hover:text-white hover:bg-neutral-800 hidden md:flex">
+                <Button variant="ghost" size="sm" onClick={() => navigate('/tools')} className="text-neutral-300 hover:text-white hover:bg-neutral-800 hidden md:flex relative">
                   Tools
+                  <span className="absolute top-1.5 right-1 h-1.5 w-1.5 rounded-full bg-red-500"></span>
                 </Button>
                 <Button variant="ghost" size="sm" onClick={() => navigate('/auth')} className="text-neutral-300 hover:text-white hover:bg-neutral-800">
                   Sign In

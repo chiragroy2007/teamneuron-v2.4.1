@@ -10,13 +10,11 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Tables } from '@/integrations/supabase/types';
+import SEO from '@/components/SEO';
 
-type Discussion = Tables<'discussions'> & {
-  profiles?: Tables<'profiles'> | null;
-  categories?: Tables<'categories'> | null;
-  comments?: (Tables<'comments'> & { profiles?: Tables<'profiles'> | null })[];
-};
+// Define types locally if Supabase types aren't easily imported/referenced correctly in this context
+// Or use 'any' if necessary to unblock, but matching previous structure is better.
+type Discussion = any;
 
 const DiscussionPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -100,6 +98,11 @@ const DiscussionPage = () => {
 
   return (
     <Layout>
+      <SEO
+        title={discussion.title}
+        description={discussion.content ? discussion.content.replace(/<[^>]*>/g, '').substring(0, 150) + '...' : 'Join the discussion on TeamNeuron.'}
+        type="article"
+      />
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <Card>
           <CardHeader>
@@ -137,7 +140,7 @@ const DiscussionPage = () => {
             <div className="prose dark:prose-invert max-w-none mb-8" dangerouslySetInnerHTML={{ __html: discussion.content }} />
             {discussion.tags && discussion.tags.length > 0 && (
               <div className="flex flex-wrap gap-2">
-                {discussion.tags.map((tag, index) => (
+                {discussion.tags.map((tag: any, index: number) => (
                   <Badge key={index} variant="secondary">{tag}</Badge>
                 ))}
               </div>
@@ -146,9 +149,9 @@ const DiscussionPage = () => {
         </Card>
 
         <div className="mt-8">
-          <h3 className="text-2xl font-semibold mb-4">Comments ({discussion.comments.length})</h3>
+          <h3 className="text-2xl font-semibold mb-4">Comments ({discussion.comments ? discussion.comments.length : 0})</h3>
           <div className="space-y-6">
-            {discussion.comments.map(comment => (
+            {discussion.comments && discussion.comments.map((comment: any) => (
               <Card key={comment.id} className="bg-muted/50">
                 <CardHeader className='flex-row items-center gap-4 pb-2'>
                   <Avatar className="h-10 w-10">

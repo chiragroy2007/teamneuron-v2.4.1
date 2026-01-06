@@ -1,7 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import UserManagement from '@/components/Admin/UserManagement';
+import ClubManagement from '@/components/Admin/ClubManagement';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { api } from '@/lib/api';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import Layout from '@/components/Layout/Layout';
+import { useNavigate } from 'react-router-dom';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import UserGrowthChart from '@/components/Admin/UserGrowthChart';
 
 interface Profile {
   id: string;
@@ -13,12 +21,6 @@ interface Profile {
   expertise: string[];
   role?: string | null;
 }
-
-import { api } from '@/lib/api';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import Layout from '@/components/Layout/Layout';
-import { useNavigate } from 'react-router-dom';
 
 interface Article {
   id: string;
@@ -116,121 +118,175 @@ const Admin: React.FC = () => {
     // TODO: Implement edit modal or navigation
   };
 
+  if (!profile || profile.role !== 'admin') {
+    return null; // Or loading spinner
+  }
+
   return (
     <Layout>
-      <div className="container mx-auto py-10">
-        <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
+      <div className="container mx-auto py-10 min-h-[80vh] flex flex-col">
+        <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
+        <p className="text-neutral-500 mb-8">Manage the platform content, users, and communities.</p>
+
         {error && <div className="text-red-500 mb-4">{error}</div>}
-        {loading ? (
-          <div>Loading...</div>
-        ) : (
-          <>
-            <section className="mb-12">
+
+        <Tabs defaultValue="overview" className="flex-1">
+          <TabsList className="mb-8">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="articles">Articles</TabsTrigger>
+            <TabsTrigger value="discussions">Discussions</TabsTrigger>
+            <TabsTrigger value="users">Users</TabsTrigger>
+            <TabsTrigger value="clubs">Clubs</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Card>
-                <CardHeader>
-                  <CardTitle>Articles</CardTitle>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-neutral-500">Total Articles</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {articles.length === 0 ? (
-                    <div>No articles found.</div>
-                  ) : (
-                    <ul className="divide-y divide-gray-200">
-                      {articles.map((article) => (
-                        <li key={article.id} className="flex items-center justify-between py-2">
-                          <span className="font-medium">{article.title}</span>
-                          <span className="text-xs text-gray-400 ml-2">{new Date(article.created_at).toLocaleDateString()}</span>
-                          <div className="flex items-center gap-2">
-                            <label className="flex items-center gap-1 cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={!!article.is_featured}
-                                onChange={async (e) => {
-                                  setLoading(true);
-                                  try {
-                                    await api.articles.update(article.id, { is_featured: e.target.checked });
-                                    toast({ title: 'Success', description: `Article ${e.target.checked ? 'featured' : 'unfeatured'}.` });
-                                    fetchAll();
-                                  } catch (error: any) {
-                                    toast({ title: 'Error', description: error.message, variant: 'destructive' });
-                                  }
-                                  setLoading(false);
-                                }}
-                              />
-                              <span className="text-xs">Featured</span>
-                            </label>
-                            <Button variant="outline" size="sm" onClick={() => handleEdit('article', article.id)}>
-                              Edit
-                            </Button>
-                            <Button variant="destructive" size="sm" onClick={() => handleDelete('article', article.id)}>
-                              Delete
-                            </Button>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                  <div className="text-2xl font-bold">{articles.length}</div>
                 </CardContent>
               </Card>
-            </section>
-            <section>
+
               <Card>
-                <CardHeader>
-                  <CardTitle>Discussions</CardTitle>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-neutral-500">Total Discussions</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {discussions.length === 0 ? (
-                    <div>No discussions found.</div>
-                  ) : (
-                    <ul className="divide-y divide-gray-200">
-                      {discussions.map((discussion) => (
-                        <li key={discussion.id} className="flex items-center justify-between py-2">
-                          <span className="font-medium">{discussion.title}</span>
-                          <span className="text-xs text-gray-400 ml-2">{new Date(discussion.created_at).toLocaleDateString()}</span>
-                          <div className="flex items-center gap-2">
-                            <label className="flex items-center gap-1 cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={!!discussion.is_pinned}
-                                onChange={async (e) => {
-                                  setLoading(true);
-                                  try {
-                                    await api.discussions.update(discussion.id, { is_pinned: e.target.checked });
-                                    toast({ title: 'Success', description: `Discussion ${e.target.checked ? 'pinned' : 'unpinned'}.` });
-                                    fetchAll();
-                                  } catch (error: any) {
-                                    toast({ title: 'Error', description: error.message, variant: 'destructive' });
-                                  }
-                                  setLoading(false);
-                                }}
-                              />
-                              <span className="text-xs">Pinned</span>
-                            </label>
-                            <Button variant="outline" size="sm" onClick={() => handleEdit('discussion', discussion.id)}>
-                              Edit
-                            </Button>
-                            <Button variant="destructive" size="sm" onClick={() => handleDelete('discussion', discussion.id)}>
-                              Delete
-                            </Button>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                  <div className="text-2xl font-bold">{discussions.length}</div>
                 </CardContent>
               </Card>
-            </section>
-            <section className="mb-12">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Users</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <UserManagement />
-                </CardContent>
-              </Card>
-            </section>
-          </>
-        )}
+              {/* Replaced System Status with User Growth Chart */}
+              <UserGrowthChart />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="articles">
+            <Card>
+              <CardHeader>
+                <CardTitle>Manage Articles</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loading && articles.length === 0 ? (
+                  <div>Loading...</div>
+                ) : articles.length === 0 ? (
+                  <div>No articles found.</div>
+                ) : (
+                  <ul className="divide-y divide-gray-200">
+                    {articles.map((article) => (
+                      <li key={article.id} className="flex items-center justify-between py-3">
+                        <span className="font-medium text-sm md:text-base truncate max-w-[200px] md:max-w-md">{article.title}</span>
+                        <div className="flex items-center gap-4">
+                          <span className="text-xs text-gray-400 hidden md:block">{new Date(article.created_at).toLocaleDateString()}</span>
+                          <label className="flex items-center gap-1 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={!!article.is_featured}
+                              onChange={async (e) => {
+                                setLoading(true);
+                                try {
+                                  await api.articles.update(article.id, { is_featured: e.target.checked });
+                                  toast({ title: 'Success', description: `Article ${e.target.checked ? 'featured' : 'unfeatured'}.` });
+                                  fetchAll();
+                                } catch (error: any) {
+                                  toast({ title: 'Error', description: error.message, variant: 'destructive' });
+                                }
+                                setLoading(false);
+                              }}
+                            />
+                            <span className="text-xs">Featured</span>
+                          </label>
+                          <Button variant="outline" size="sm" onClick={() => handleEdit('article', article.id)}>
+                            Edit
+                          </Button>
+                          <Button variant="destructive" size="sm" onClick={() => handleDelete('article', article.id)}>
+                            Delete
+                          </Button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="discussions">
+            <Card>
+              <CardHeader>
+                <CardTitle>Manage Discussions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loading && discussions.length === 0 ? (
+                  <div>Loading...</div>
+                ) : discussions.length === 0 ? (
+                  <div>No discussions found.</div>
+                ) : (
+                  <ul className="divide-y divide-gray-200">
+                    {discussions.map((discussion) => (
+                      <li key={discussion.id} className="flex items-center justify-between py-3">
+                        <span className="font-medium text-sm md:text-base truncate max-w-[200px] md:max-w-md">{discussion.title}</span>
+                        <div className="flex items-center gap-4">
+                          <span className="text-xs text-gray-400 hidden md:block">{new Date(discussion.created_at).toLocaleDateString()}</span>
+                          <label className="flex items-center gap-1 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={!!discussion.is_pinned}
+                              onChange={async (e) => {
+                                setLoading(true);
+                                try {
+                                  await api.discussions.update(discussion.id, { is_pinned: e.target.checked });
+                                  toast({ title: 'Success', description: `Discussion ${e.target.checked ? 'pinned' : 'unpinned'}.` });
+                                  fetchAll();
+                                } catch (error: any) {
+                                  toast({ title: 'Error', description: error.message, variant: 'destructive' });
+                                }
+                                setLoading(false);
+                              }}
+                            />
+                            <span className="text-xs">Pinned</span>
+                          </label>
+                          <Button variant="outline" size="sm" onClick={() => handleEdit('discussion', discussion.id)}>
+                            Edit
+                          </Button>
+                          <Button variant="destructive" size="sm" onClick={() => handleDelete('discussion', discussion.id)}>
+                            Delete
+                          </Button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="users">
+            <Card>
+              <CardHeader>
+                <CardTitle>User Management</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <UserManagement />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="clubs">
+            <ClubManagement />
+          </TabsContent>
+
+        </Tabs>
+
+        {/* Footer */}
+        <div className="mt-12 pt-8 border-t border-gray-200 text-center text-sm text-gray-500 pb-8">
+          <p>TeamNeuron Dash v2.1.4</p>
+          <p className="mt-1">
+            &copy; {new Date().getFullYear()} Created by <a href="https://github.com/chiragroy2007" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Chirag</a>
+          </p>
+        </div>
       </div>
     </Layout>
   );

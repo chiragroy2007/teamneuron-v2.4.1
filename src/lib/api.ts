@@ -182,8 +182,8 @@ export const api = {
 
     clubs: {
         list: async () => {
-            // Placeholder for public clubs list if needed
-            return [];
+            const res = await fetch(`${API_URL}/api/clubs`);
+            return handleResponse(res);
         },
         listUserClubs: async () => {
             const token = localStorage.getItem('token');
@@ -206,6 +206,14 @@ export const api = {
             const token = localStorage.getItem('token');
             const res = await fetch(`${API_URL}/api/clubs/${clubId}/leave`, {
                 method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            return handleResponse(res);
+        },
+        removeMember: async (clubId: string, userId: string) => {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_URL}/api/clubs/${clubId}/members/${userId}`, {
+                method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             return handleResponse(res);
@@ -269,6 +277,49 @@ export const api = {
             return handleResponse(res);
         }
     },
+    messages: {
+        listConversations: async () => {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_URL}/api/messages/conversations`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            return handleResponse(res);
+        },
+        listMessages: async (partnerId: string) => {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_URL}/api/messages/${partnerId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            return handleResponse(res);
+        },
+        send: async (receiverId: string, content: string) => {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_URL}/api/messages`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ receiverId, content })
+            });
+            return handleResponse(res);
+        },
+        getUnreadCount: async () => {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_URL}/api/messages/unread-count`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            return handleResponse(res);
+        },
+        markAsRead: async (partnerId: string) => {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_URL}/api/messages/${partnerId}/read`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            return handleResponse(res);
+        }
+    },
     templates: {
         list: async (owner_id?: string) => {
             let url = `${API_URL}/api/templates`;
@@ -288,10 +339,20 @@ export const api = {
             const res = await fetch(url);
             return handleResponse(res);
         },
+
         delete: async (id: string) => {
             const token = localStorage.getItem('token');
             const res = await fetch(`${API_URL}/api/users/${id}`, {
                 method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            return handleResponse(res);
+        }
+    },
+    stats: {
+        getUserGrowth: async () => {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_URL}/api/stats/users-growth`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             return handleResponse(res);

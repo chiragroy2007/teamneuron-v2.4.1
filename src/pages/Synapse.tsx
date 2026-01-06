@@ -1,151 +1,110 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout/Layout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import confetti from 'canvas-confetti';
 import { Button } from '@/components/ui/button';
-import { Users, BookOpen, Network, Target } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Heart } from 'lucide-react';
 
 const Synapse: React.FC = () => {
-  return (
-    <Layout>
-      <div className="min-h-screen bg-white">
-        {/* Hero Section */}
-        <div className="py-20 px-4 bg-black">
-          <div className="container mx-auto text-center max-w-4xl">
-            <div className="flex justify-center mb-8">
-              <img
-                src="/synapse.png"
-                alt="Synapse Logo"
-              />
-            </div>
-            <p className="text-xl text-gray-300 mb-8 leading-relaxed">
-              A comprehensive research networking platform connecting undergraduate scientists across the globe.
-              Where knowledge flows, collaboration thrives, and discoveries begin.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button asChild size="lg" className="bg-white hover:bg-gray-200 text-black px-8 py-3">
-                <Link to="/auth?tab=signup">
-                  Join Synapse
-                </Link>
-              </Button>
-              <Button asChild variant="outline" size="lg" className="px-8 py-3 border-white text-black hover:bg-white hover:text-black">
-                <Link to="/articles">
-                  Explore Research
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </div>
+    const [hypeCount, setHypeCount] = useState<number>(0);
+    const [isAnimating, setIsAnimating] = useState(false);
 
-        {/* Platform Overview */}
-        <div className="py-16 px-4 bg-gray-50">
-          <div className="container mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-black mb-4">
-                Platform Overview
-              </h2>
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                Synapse bridges online journals and offline collaboration for undergraduate researchers.
-              </p>
-            </div>
+    useEffect(() => {
+        // Fetch initial hype count
+        fetch('/api/hype/synapse')
+            .then(res => res.json())
+            .then(data => setHypeCount(data.count || 0))
+            .catch(err => console.error('Failed to fetch hype:', err));
+    }, []);
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-              <Card className="text-center p-6 border-gray-200">
-                <CardHeader className="pb-4">
-                  <div className="w-12 h-12 flex items-center justify-center mx-auto mb-4">
-                    <Network className="h-8 w-8 text-black" />
-                  </div>
-                  <CardTitle className="text-lg text-black">Research Networking</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-600 text-sm">
-                    Connect with fellow researchers and build academic relationships across disciplines.
-                  </p>
-                </CardContent>
-              </Card>
+    const handleHype = async () => {
+        // Trigger confetti
+        confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#00FFFF', '#FF00FF']
+        });
 
-              <Card className="text-center p-6 border-gray-200">
-                <CardHeader className="pb-4">
-                  <div className="w-12 h-12 flex items-center justify-center mx-auto mb-4">
-                    <BookOpen className="h-8 w-8 text-black" />
-                  </div>
-                  <CardTitle className="text-lg text-black">Digital Journals</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-600 text-sm">
-                    Publish research in peer-reviewed digital journals with global visibility.
-                  </p>
-                </CardContent>
-              </Card>
+        setIsAnimating(true);
+        setTimeout(() => setIsAnimating(false), 300);
 
-              <Card className="text-center p-6 border-gray-200">
-                <CardHeader className="pb-4">
-                  <div className="w-12 h-12 flex items-center justify-center mx-auto mb-4">
-                    <Users className="h-8 w-8 text-black" />
-                  </div>
-                  <CardTitle className="text-lg text-black">Collaborative Platform</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-600 text-sm">
-                    Work together on projects and share resources with researchers worldwide.
-                  </p>
-                </CardContent>
-              </Card>
+        // Optimistic update
+        setHypeCount(prev => prev + 1);
 
-              <Card className="text-center p-6 border-gray-200">
-                <CardHeader className="pb-4">
-                  <div className="w-12 h-12 flex items-center justify-center mx-auto mb-4">
-                    <Target className="h-8 w-8 text-black" />
-                  </div>
-                  <CardTitle className="text-lg text-black">Research Integration</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-600 text-sm">
-                    Promote integrated research opportunities between undergrads, professors, and students.
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
+        // Send to backend
+        try {
+            await fetch('/api/hype/synapse', { method: 'POST' });
+        } catch (error) {
+            console.error('Failed to hype:', error);
+        }
+    };
 
-        {/* Location Section */}
-        <div className="py-16 px-4 bg-white">
-          <div className="container mx-auto max-w-6xl">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <div>
-                <h2 className="text-3xl font-bold text-black mb-6">
-                  Our Location
-                </h2>
-                <div className="space-y-4 text-gray-600">
-                  <p className="text-lg">
-                    Synapse was founded by undergraduate students of <strong>IISER Tirupati</strong> as a student initiative to bridge the gap between online research journals and offline collaboration.
-                  </p>
-                  <p className="text-lg">
-                    Located at the Indian Institute of Science Education and Research (IISER) Tirupati, Synapse serves as a central hub for scientific collaboration and research networking.
-                  </p>
-                  <div className="pt-4">
-                    <p className="text-sm text-gray-500 mb-2">Founded by:</p>
-                    <p className="font-medium text-black">chirag20251069@students.iisertirupati.ac.in</p>
-                  </div>
+    return (
+        <Layout>
+            <div className="min-h-[80vh] flex flex-col justify-center items-center bg-white px-4 py-12">
+                <div className="max-w-2xl mx-auto space-y-8 flex flex-col items-center">
+
+                    {/* Header */}
+                    <div className="flex flex-col items-start w-full space-y-4">
+                        <img
+                            src="/synapse.logo.png"
+                            alt="Synapse"
+                            className="h-16 w-16 object-contain mb-2"
+                        />
+                        <div className="space-y-1">
+                            <h1 className="text-3xl font-semibold tracking-tight text-neutral-900">
+                                Synapse
+                            </h1>
+                            <div className="flex items-center gap-2 text-sm text-neutral-500 font-medium">
+                                <span>Powered by</span>
+                                <div className="flex items-center gap-1.5 bg-neutral-100 px-2 py-0.5 rounded-full">
+                                    <img src="/logo-black.png" alt="TeamNeuron" className="h-3 w-3" />
+                                    <span className="text-xs text-neutral-900">TeamNeuron</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="text-neutral-600 space-y-4 text-sm md:text-base leading-relaxed text-justify w-full max-w-xl">
+                        <p className="font-medium text-neutral-900">
+                            A state of the art, free to use tool for skill matchmaking.
+                        </p>
+                        <p>
+                            We are building Synapse to solve a pretty basic problem in our community: actually finding the right people to work with.
+                        </p>
+                        <p>
+                            Most networking happens by chance, or you are just limited to who you already know. Synapse fixes that by giving you a structured way to find collaborators who have exactly what you need. Say you want to learn a specific tech stack, well, Synapse connects you with someone who knows it and, ideally, wants to learn something you already know.
+                        </p>
+                        <p>
+                            It is also fully integrated with the TeamNeuron ecosystem, so your existing account, profile, and reputation will auto sync instantly. No need to sign up for yet another thing.
+                        </p>
+                        <p className="text-neutral-400 text-xs italic pt-2">
+                            Currently under active development.
+                        </p>
+                    </div>
+
+                    {/* Hype Section */}
+                    <div className="pt-8 flex flex-col items-center space-y-3">
+                        <Button
+                            variant="outline"
+                            onClick={handleHype}
+                            className={`rounded-full px-6 py-6 border-2 transition-all duration-200 transform hover:scale-105 active:scale-95 ${isAnimating ? 'border-red-500 text-red-500 bg-red-50' : 'border-neutral-200 text-neutral-600 hover:border-neutral-300'}`}
+                        >
+                            <span className="text-lg font-medium flex items-center gap-2">
+                                <Heart className={`h-5 w-5 ${isAnimating ? 'fill-current' : ''}`} />
+                                Hype us
+                            </span>
+                        </Button>
+                        <div className="text-xs text-neutral-400 font-mono">
+                            {hypeCount.toLocaleString()} hypes so far
+                        </div>
+                    </div>
+
                 </div>
-              </div>
-              <div className="bg-gray-100 rounded-lg overflow-hidden shadow-lg">
-                <iframe
-                  src="https://www.openstreetmap.org/export/embed.html?bbox=79.59%2C13.74%2C79.61%2C13.75&layer=mapnik&marker=13.7458%2C79.5964"
-                  width="100%"
-                  height="400"
-                  style={{ border: 0 }}
-                  title="IISER Tirupati Location"
-                ></iframe>
-              </div>
             </div>
-          </div>
-        </div>
-      </div>
-    </Layout>
-  );
+        </Layout>
+    );
 };
 
 export default Synapse;

@@ -149,62 +149,61 @@ const Articles = () => {
                   key={article.id}
                   className="group flex flex-col justify-between border border-neutral-200 bg-white transition-all hover:border-neutral-900"
                 >
-                  <CardHeader className="space-y-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-6 w-6">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-xl md:text-2xl font-bold leading-tight tracking-tight mb-1">
+                      <Link
+                        to={`/articles/${article.id}`}
+                        className="hover:underline underline-offset-4 decoration-neutral-400"
+                      >
+                        {article.title}
+                      </Link>
+                    </CardTitle>
+                  </CardHeader>
+
+                  <CardContent className="space-y-4 pb-4">
+                    {article.featured_image && (
+                      <div className="mb-3 rounded-md overflow-hidden border border-neutral-100 shadow-sm">
+                        <Link to={`/articles/${article.id}`}>
+                          <img
+                            src={article.featured_image}
+                            alt={article.title}
+                            className="w-full h-auto max-h-[500px] object-contain bg-neutral-50 transition-transform hover:scale-[1.01] duration-500"
+                          />
+                        </Link>
+                      </div>
+                    )}
+
+                    <p className="mb-2 text-sm text-neutral-600 leading-relaxed">
+                      {article.excerpt?.slice(0, 400)}{article.excerpt && article.excerpt.length > 400 ? '...' : ''}
+                    </p>
+
+                    <div className="flex items-center justify-between pt-4 border-t border-neutral-100">
+                      <div className="flex items-center space-x-3">
+                        <Avatar className="h-8 w-8 ring-2 ring-white shadow-sm">
                           <AvatarImage src={article.profiles?.avatar_url} />
-                          <AvatarFallback className="text-[10px]">
+                          <AvatarFallback className="bg-neutral-100 text-neutral-600 text-[10px]">
                             {article.profiles?.username?.charAt(0).toUpperCase() || 'U'}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="text-xs font-medium text-muted-foreground">
-                          {article.profiles?.full_name || article.profiles?.username || 'Anonymous'}
-                        </span>
-                      </div>
-                      <span className="text-[10px] text-muted-foreground">
-                        {new Date(article.published_at).toLocaleDateString(undefined, {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric'
-                        })}
-                      </span>
-                    </div>
-
-                    <Link to={`/articles/${article.id}`} className="block">
-                      <CardTitle className="text-base font-semibold leading-tight group-hover:underline underline-offset-4 decoration-neutral-400">
-                        {article.title}
-                      </CardTitle>
-                    </Link>
-
-                    {article.categories && (
-                      <Badge
-                        variant="secondary"
-                        className="w-fit text-[10px] font-normal bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
-                      >
-                        {article.categories.name}
-                      </Badge>
-                    )}
-                  </CardHeader>
-
-                  <CardContent className="space-y-4">
-                    <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">
-                      {article.excerpt}
-                    </p>
-
-                    <div className="flex items-center justify-between pt-2 border-t border-neutral-100">
-                      <div className="flex gap-2 overflow-hidden">
-                        {article.tags?.slice(0, 2).map((tag, i) => (
-                          <span key={i} className="text-[10px] text-muted-foreground bg-neutral-100 px-1.5 py-0.5 rounded">
-                            #{tag}
+                        <div className="flex flex-col">
+                          <span className="text-sm font-semibold text-neutral-900">
+                            {article.profiles?.full_name || article.profiles?.username || 'Anonymous'}
                           </span>
-                        ))}
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(article.published_at).toLocaleDateString(undefined, {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric'
+                            })}
+                          </span>
+                        </div>
                       </div>
+
                       <Link
                         to={`/articles/${article.id}`}
-                        className="text-[10px] font-medium flex items-center gap-1 text-neutral-900 hover:text-neutral-600 transition-colors"
+                        className="text-sm font-medium text-neutral-900 hover:text-neutral-700"
                       >
-                        Read <ArrowRight className="h-3 w-3" />
+                        Read Article →
                       </Link>
                     </div>
                   </CardContent>

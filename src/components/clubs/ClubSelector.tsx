@@ -50,14 +50,14 @@ export function ClubSelector({ value, onChange, className }: ClubSelectorProps) 
     <div className={className}>
       <Label htmlFor="club">Post to Club (optional)</Label>
       <Select
-        value={value}
-        onValueChange={onChange}
+        value={value || "_none"}
+        onValueChange={(val) => onChange(val === "_none" ? "" : val)}
       >
         <SelectTrigger id="club" className="mt-1">
           <SelectValue placeholder="Select a club (optional)" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">None (Public Post)</SelectItem>
+          <SelectItem value="_none">None (Public Post)</SelectItem>
           {clubs.map((club) => (
             <SelectItem key={club.id} value={club.id}>
               {club.name}

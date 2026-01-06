@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 // Define types that match what the app expects (or close to it)
 export interface User {
   id: string;
+  user_id: string;
   email?: string;
   username?: string;
   full_name?: string;

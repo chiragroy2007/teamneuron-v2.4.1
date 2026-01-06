@@ -126,6 +126,16 @@ CREATE TABLE IF NOT EXISTS post_templates (
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Hypes table
+CREATE TABLE IF NOT EXISTS hypes (
+    id TEXT PRIMARY KEY,
+    count INTEGER DEFAULT 0,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Insert Initial Hype Counter for Synapse
+INSERT OR IGNORE INTO hypes (id, count) VALUES ('synapse', 0);
+
 -- Insert Initial Categories (if not exist)
 INSERT OR IGNORE INTO categories (id, name, slug, color) VALUES 
 ('cat_1', 'Neuroscience', 'neuroscience', '#10b981'),
@@ -134,3 +144,22 @@ INSERT OR IGNORE INTO categories (id, name, slug, color) VALUES
 ('cat_4', 'Neurology', 'neurology', '#f59e0b'),
 ('cat_5', 'Research', 'research', '#ec4899'),
 ('cat_6', 'General', 'general', '#6b7280');
+
+-- Synapse Skills Table
+CREATE TABLE IF NOT EXISTS synapse_skills (
+    id TEXT PRIMARY KEY,
+    user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+    skill TEXT NOT NULL,
+    type TEXT NOT NULL, -- 'TEACH' or 'LEARN'
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Messages Table for Chat System
+CREATE TABLE IF NOT EXISTS messages (
+    id TEXT PRIMARY KEY,
+    sender_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+    receiver_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    read_at TEXT, -- Timestamp when read
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);

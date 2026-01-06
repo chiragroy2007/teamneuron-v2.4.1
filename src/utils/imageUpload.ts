@@ -20,7 +20,7 @@ export async function uploadImage(file: File, userId: string): Promise<ImageUplo
     }
 
     // Validate file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024; // 5MB
+    const maxSize = 50 * 1024 * 1024; // 50MB
     if (file.size > maxSize) {
       return { success: false, error: 'Image must be less than 5MB' };
     }

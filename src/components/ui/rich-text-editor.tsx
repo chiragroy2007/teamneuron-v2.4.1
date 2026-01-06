@@ -152,20 +152,20 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     const handlePaste = async (event: ClipboardEvent) => {
       const items = Array.from(event.clipboardData?.items || []);
       const imageItem = items.find(item => item.type.indexOf('image') === 0);
-      
+
       if (imageItem) {
         event.preventDefault();
         const file = imageItem.getAsFile();
         if (file) {
           // Show loading state
-          editor.chain().focus().setImage({ 
-            src: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJWNk0xMiAxOFYyMk02IDEySDJNMjIgMTJIMThNMTkuMDcgMTkuMDdMMTYuMjQgMTYuMjRNMTkuMDcgNC45M0wxNi4yNCA3Ljc2TTQuOTMgMTkuMDdMNy43NiAxNi4yNE00LjkzIDQuOTNMNy43NiA3Ljc2IiBzdHJva2U9IiNjY2MiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+Cjwvc3ZnPgo=', 
-            alt: 'Uploading...' 
+          editor.chain().focus().setImage({
+            src: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJWNk0xMiAxOFYyMk02IDEySDJNMjIgMTJIMThNMTkuMDcgMTkuMDdMMTYuMjQgMTYuMjRNMTkuMDcgNC45M0wxNi4yNCA3Ljc2TTQuOTMgMTkuMDdMNy43NiAxNi4yNE00LjkzIDQuOTNMNy43NiA3Ljc2IiBzdHJva2U9IiNjY2MiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+Cjwvc3ZnPgo=',
+            alt: 'Uploading...'
           }).run();
-          
+
           try {
             const result = await uploadImage(file, user.id);
-            
+
             if (result.success && result.url) {
               // Replace the loading image with the actual uploaded image
               const currentContent = editor.getHTML();
@@ -174,7 +174,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                 result.url
               );
               editor.commands.setContent(updatedContent);
-              
+
               if (onChange) {
                 onChange(updatedContent);
               }
@@ -186,7 +186,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                 ''
               );
               editor.commands.setContent(updatedContent);
-              
+
               console.error('Image upload failed:', result.error);
               alert('Failed to upload image: ' + result.error);
             }
@@ -220,7 +220,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       if (file && editor) {
         try {
           const result = await uploadImage(file, user.id);
-          
+
           if (result.success && result.url) {
             editor.chain().focus().setImage({ src: result.url }).run();
           } else {
@@ -262,6 +262,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <div className="flex flex-wrap items-center gap-1">
             {/* Text Formatting */}
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               onClick={() => editor.chain().focus().toggleBold().run()}
@@ -270,6 +271,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               <Bold className="h-4 w-4" />
             </Button>
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               onClick={() => editor.chain().focus().toggleItalic().run()}
@@ -278,6 +280,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               <Italic className="h-4 w-4" />
             </Button>
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               onClick={() => editor.chain().focus().toggleUnderline().run()}
@@ -286,6 +289,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               <UnderlineIcon className="h-4 w-4" />
             </Button>
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               onClick={() => editor.chain().focus().toggleStrike().run()}
@@ -294,6 +298,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               <Strikethrough className="h-4 w-4" />
             </Button>
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               onClick={() => editor.chain().focus().toggleCode().run()}
@@ -302,6 +307,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               <Code className="h-4 w-4" />
             </Button>
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               onClick={() => editor.chain().focus().toggleHighlight().run()}
@@ -314,6 +320,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
             {/* Headings */}
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
@@ -322,6 +329,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               <Heading1 className="h-4 w-4" />
             </Button>
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
@@ -330,6 +338,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               <Heading2 className="h-4 w-4" />
             </Button>
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
@@ -379,6 +388,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
             {/* Text Alignment */}
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               onClick={() => editor.chain().focus().setTextAlign('left').run()}
@@ -387,6 +397,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               <AlignLeft className="h-4 w-4" />
             </Button>
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               onClick={() => editor.chain().focus().setTextAlign('center').run()}
@@ -395,6 +406,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               <AlignCenter className="h-4 w-4" />
             </Button>
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               onClick={() => editor.chain().focus().setTextAlign('right').run()}
@@ -403,6 +415,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               <AlignRight className="h-4 w-4" />
             </Button>
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               onClick={() => editor.chain().focus().setTextAlign('justify').run()}
@@ -415,6 +428,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
             {/* Indentation */}
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               onClick={() => {
@@ -428,6 +442,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               <Indent className="h-4 w-4" />
             </Button>
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               onClick={() => {
@@ -444,6 +459,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
             {/* Lists */}
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               onClick={() => editor.chain().focus().toggleBulletList().run()}
@@ -452,6 +468,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               <List className="h-4 w-4" />
             </Button>
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               onClick={() => editor.chain().focus().toggleOrderedList().run()}
@@ -460,6 +477,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               <ListOrdered className="h-4 w-4" />
             </Button>
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               onClick={() => editor.chain().focus().toggleTaskList().run()}
@@ -468,6 +486,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               <CheckSquare className="h-4 w-4" />
             </Button>
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               onClick={() => editor.chain().focus().toggleBlockquote().run()}
@@ -476,6 +495,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               <Quote className="h-4 w-4" />
             </Button>
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               onClick={() => editor.chain().focus().setHorizontalRule().run()}
@@ -486,10 +506,10 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             <Separator orientation="vertical" className="h-6 mx-1" />
 
             {/* Media & Links */}
-            <Button variant="ghost" size="sm" onClick={setLink}>
+            <Button type="button" variant="ghost" size="sm" onClick={setLink}>
               <LinkIcon className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={addImage}>
+            <Button type="button" variant="ghost" size="sm" onClick={addImage}>
               <ImageIcon className="h-4 w-4" />
             </Button>
 

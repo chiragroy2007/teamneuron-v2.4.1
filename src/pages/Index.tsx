@@ -27,11 +27,14 @@ const Index = () => {
       avatar_url?: string;
     } | null;
     type: 'article' | 'discussion';
+    featured_image?: string;
   };
 
   const [feed, setFeed] = useState<Post[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [researchers, setResearchers] = useState<any[]>([]);
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [showProfilePrompt, setShowProfilePrompt] = useState(false);
 
   useEffect(() => {
     const fetchResearchers = async () => {
@@ -43,9 +46,23 @@ const Index = () => {
       }
     };
 
+    const fetchUserProfile = async () => {
+      try {
+        const data = await api.auth.me();
+        setUserProfile(data);
+        // Show prompt if user hasn't filled in their role (key indicator of incomplete profile)
+        if (data && !data.role) {
+          setShowProfilePrompt(true);
+        }
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+      }
+    };
+
     if (user) {
       fetchData();
       fetchResearchers();
+      fetchUserProfile();
     }
   }, [user]);
 
@@ -145,6 +162,62 @@ const Index = () => {
             </div>
           </section>
 
+          {/* Profile Completion Prompt - Synapse Powered */}
+          {showProfilePrompt && (
+            <div className="py-3 animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="relative rounded-xl border border-neutral-200 bg-white shadow-sm hover:shadow-md transition-shadow">
+                <div className="p-4 md:p-5">
+                  <div className="flex items-center gap-4">
+                    {/* Synapse Logo */}
+                    <div className="shrink-0">
+                      <div className="bg-neutral-50 p-2.5 rounded-lg border border-neutral-100">
+                        <img
+                          src="/synapse.logo.png"
+                          alt="Synapse"
+                          className="w-8 h-8 object-contain"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-semibold text-neutral-900 mb-0.5">
+                        Complete Your Research Profile
+                      </h3>
+                      <p className="text-xs text-neutral-500 leading-relaxed">
+                        Unlock AI-powered matchmaking and connect with researchers automatically
+                      </p>
+                    </div>
+
+                    {/* CTA Button */}
+                    <div className="shrink-0">
+                      <Link to="/collaborate">
+                        <Button
+                          size="sm"
+                          className="bg-neutral-900 hover:bg-neutral-800 text-white text-xs h-8 px-4 rounded-lg"
+                          onClick={() => setShowProfilePrompt(false)}
+                        >
+                          Complete Profile
+                        </Button>
+                      </Link>
+                    </div>
+
+                    {/* Dismiss button */}
+                    <button
+                      onClick={() => setShowProfilePrompt(false)}
+                      className="shrink-0 p-1 rounded-md hover:bg-neutral-100 transition-colors text-neutral-400 hover:text-neutral-600"
+                      aria-label="Dismiss"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Main layout: dominant left column */}
           <div className="grid grid-cols-12 gap-6 py-4">
             {/* Left: Quick actions + Articles (dominant) */}
@@ -212,10 +285,35 @@ const Index = () => {
                       key={article.id}
                       className="border border-neutral-200 bg-white transition-colors hover:border-neutral-900"
                     >
-                      <CardHeader>
-                        <div className="mb-2 flex items-center justify-between gap-3">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-lg md:text-xl font-bold leading-tight tracking-tight mb-1">
+                          <Link
+                            to={`/articles/${article.id}`}
+                            className="hover:underline underline-offset-4 decoration-neutral-400"
+                          >
+                            {article.title}
+                          </Link>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="pb-4">
+                        {article.featured_image && (
+                          <div className="mb-3 rounded-md overflow-hidden border border-neutral-100 shadow-sm">
+                            <Link to={`/articles/${article.id}`}>
+                              <img
+                                src={article.featured_image}
+                                alt={article.title}
+                                className="w-full h-auto max-h-[500px] object-contain bg-neutral-50 transition-transform hover:scale-[1.01] duration-500"
+                              />
+                            </Link>
+                          </div>
+                        )}
+                        <p className="mb-2 text-sm text-neutral-600 leading-relaxed">
+                          {article.excerpt?.slice(0, 400)}{article.excerpt && article.excerpt.length > 400 ? '...' : ''}
+                        </p>
+
+                        <div className="flex items-center justify-between pt-4 border-t border-neutral-100">
                           <div className="flex items-center space-x-3">
-                            <Avatar className="h-8 w-8">
+                            <Avatar className="h-8 w-8 ring-2 ring-white shadow-sm">
                               {article.profiles?.avatar_url ? (
                                 <img
                                   src={article.profiles.avatar_url}
@@ -223,19 +321,19 @@ const Index = () => {
                                   className="rounded-full"
                                 />
                               ) : (
-                                <AvatarFallback>
+                                <AvatarFallback className="bg-neutral-100 text-neutral-600">
                                   {article.profiles?.username?.charAt(0).toUpperCase() ||
                                     'U'}
                                 </AvatarFallback>
                               )}
                             </Avatar>
-                            <div>
-                              <p className="text-sm font-medium">
+                            <div className="flex flex-col">
+                              <span className="text-sm font-semibold text-neutral-900">
                                 {article.profiles?.full_name ||
                                   article.profiles?.username ||
                                   'Anonymous'}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
+                              </span>
+                              <span className="text-xs text-neutral-500">
                                 {new Date(article.created_at).toLocaleDateString(
                                   'en-US',
                                   {
@@ -244,49 +342,14 @@ const Index = () => {
                                     day: 'numeric',
                                   },
                                 )}
-                              </p>
+                              </span>
                             </div>
                           </div>
-                        </div>
-                        <CardTitle className="text-base font-semibold leading-snug tracking-tight">
                           <Link
                             to={`/articles/${article.id}`}
-                            className="line-clamp-2 underline-offset-4 hover:underline"
+                            className="text-sm font-medium text-neutral-900 hover:text-neutral-700"
                           >
-                            {article.title}
-                          </Link>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="mb-3 line-clamp-3 text-sm text-muted-foreground">
-                          {article.excerpt}
-                        </p>
-                        {article.tags && article.tags.length > 0 && (
-                          <div className="mb-3 flex flex-wrap gap-1">
-                            {article.tags.slice(0, 3).map((tag, tagIndex) => (
-                              <Badge
-                                key={tagIndex}
-                                variant="secondary"
-                                className="text-xs"
-                              >
-                                {tag}
-                              </Badge>
-                            ))}
-                          </div>
-                        )}
-                        <div className="flex items-center justify-between text-xs text-muted-foreground">
-                          <div className="flex items-center space-x-3">
-                            {article.tags && article.tags.length > 0 && (
-                              <span className="truncate">
-                                {article.tags.slice(0, 2).join(' · ')}
-                              </span>
-                            )}
-                          </div>
-                          <Link
-                            to={`/articles/${article.id}`}
-                            className="text-[11px] font-medium text-neutral-900 underline-offset-4 hover:underline"
-                          >
-                            Read
+                            Read Article →
                           </Link>
                         </div>
                       </CardContent>

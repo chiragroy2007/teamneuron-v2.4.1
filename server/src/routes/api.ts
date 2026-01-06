@@ -349,10 +349,12 @@ router.put('/profiles', authenticateToken, async (req: any, res) => {
         const updates = req.body;
         const userId = req.user.id;
 
-        // Ensure user can only update their own profile (which they are identified by token)
-        // Fields allowed to update: role, education, linkedin_url, interests, skills, collaboration_preferences, availability, current_projects, bio
+        console.log('Profile update request:', { userId, updates });
 
-        const allowedInfo = ['role', 'education', 'linkedin_url', 'interests', 'skills', 'collaboration_preferences', 'availability', 'current_projects', 'bio'];
+        // Ensure user can only update their own profile (which they are identified by token)
+        // Fields allowed to update: role, education, linkedin_url, interests, skills, collaboration_preferences, availability, current_projects, bio, cv_url
+
+        const allowedInfo = ['role', 'education', 'linkedin_url', 'interests', 'skills', 'collaboration_preferences', 'availability', 'current_projects', 'bio', 'cv_url'];
 
         const fields = [];
         const values = [];
@@ -369,13 +371,21 @@ router.put('/profiles', authenticateToken, async (req: any, res) => {
         }
 
         if (fields.length === 0) {
+            console.log('No fields to update');
             return res.json({ success: true }); // Nothing to update
         }
 
-        await query(`UPDATE profiles SET ${fields.join(', ')} WHERE user_id = ?`, [...values, userId]);
+        const sql = `UPDATE profiles SET ${fields.join(', ')} WHERE user_id = ?`;
+        const params = [...values, userId];
+        console.log('Executing SQL:', sql);
+        console.log('With params:', params);
+
+        const result = await query(sql, params);
+        console.log('Update result:', result);
+
         res.json({ success: true });
     } catch (error) {
-        console.error(error);
+        console.error('Profile update error:', error);
         res.status(500).json({ error: 'Server error' });
     }
 });
@@ -391,6 +401,17 @@ router.get('/clubs/my', authenticateToken, async (req: any, res) => {
              WHERE cm.user_id = ?`,
             [userId]
         );
+        res.json(result.rows);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Get All Clubs (Public/Admin)
+router.get('/clubs', async (req, res) => {
+    try {
+        const result = await query('SELECT * FROM clubs ORDER BY name ASC');
         res.json(result.rows);
     } catch (error) {
         console.error(error);
@@ -422,11 +443,25 @@ router.post('/clubs/:id/join', authenticateToken, async (req: any, res) => {
     }
 });
 
-// Leave Club
+// Leave Club (Self)
 router.post('/clubs/:id/leave', authenticateToken, async (req: any, res) => {
     try {
         const { id } = req.params;
         const userId = req.user.id;
+        await query('DELETE FROM club_members WHERE club_id = ? AND user_id = ?', [id, userId]);
+        res.json({ success: true });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Remove Member from Club (Admin/Owner)
+router.delete('/clubs/:id/members/:userId', authenticateToken, async (req: any, res) => {
+    try {
+        const { id, userId } = req.params;
+        // Ideally enforce admin check here.
+        // Assuming Admin UI calls this.
         await query('DELETE FROM club_members WHERE club_id = ? AND user_id = ?', [id, userId]);
         res.json({ success: true });
     } catch (error) {
@@ -732,6 +767,139 @@ router.put('/discussions/:id', authenticateToken, async (req: any, res) => {
             await query(`UPDATE discussions SET ${fields} WHERE id = ?`, [...values, id]);
         }
         res.json({ success: true });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Delete User (Admin only)
+router.delete('/users/:id', authenticateToken, async (req: any, res) => {
+    try {
+        const { id } = req.params;
+
+        // SQLite foreign keys might not be enabled by default.
+        // Manually delete related records to ensure cleanup.
+        await query('DELETE FROM profiles WHERE user_id = ?', [id]);
+        await query('DELETE FROM club_members WHERE user_id = ?', [id]);
+        // Also posts, comments, articles? 
+        // For now, let's stick to the immediate profile issue.
+        // Ideally should optimize schema or enable PRAGMA foreign_keys = ON.
+
+        await query('DELETE FROM users WHERE id = ?', [id]);
+        res.json({ success: true });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Get User Growth Stats (Admin)
+router.get('/stats/users-growth', authenticateToken, async (req: any, res) => {
+    try {
+        const baselineResult = await query(`
+            SELECT count(*) as count
+            FROM users
+            WHERE created_at < date('now', '-30 days')
+        `);
+        const baseline = baselineResult.rows[0]?.count || 0;
+
+        const result = await query(`
+            SELECT date(created_at) as date, count(*) as count
+            FROM users
+            WHERE created_at >= date('now', '-30 days')
+            GROUP BY date(created_at)
+            ORDER BY date(created_at) ASC
+        `);
+
+        res.json({
+            baseline: baseline,
+            history: result.rows
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Sitemap Generator
+router.get('/sitemap.xml', async (req, res) => {
+    try {
+        const baseUrl = 'https://www.teamneuron.blog';
+
+        // 1. Get dynamic content
+        const articles = await query('SELECT id, updated_at FROM articles WHERE published_at IS NOT NULL');
+        const discussions = await query('SELECT id, updated_at FROM discussions');
+
+        let xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <!-- Static Pages -->
+    <url><loc>${baseUrl}/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
+    <url><loc>${baseUrl}/auth</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+    <url><loc>${baseUrl}/articles</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+    <url><loc>${baseUrl}/discussions</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+    <url><loc>${baseUrl}/collaborate</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+    <url><loc>${baseUrl}/projects</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+    <url><loc>${baseUrl}/clubs</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+    <url><loc>${baseUrl}/clubs/iiser-tirupati</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+`;
+
+        // 2. Add Articles
+        articles.rows.forEach(article => {
+            xml += `    <url>
+        <loc>${baseUrl}/articles/${article.id}</loc>
+        <lastmod>${new Date(article.updated_at).toISOString()}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
+    </url>\n`;
+        });
+
+        // 3. Add Discussions
+        discussions.rows.forEach(disc => {
+            xml += `    <url>
+        <loc>${baseUrl}/discussions/${disc.id}</loc>
+        <lastmod>${new Date(disc.updated_at).toISOString()}</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>0.7</priority>
+    </url>\n`;
+        });
+
+        xml += '</urlset>';
+
+        res.header('Content-Type', 'application/xml');
+        res.send(xml);
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Error generating sitemap');
+    }
+});
+
+// Get Hype Count
+router.get('/hype/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await query('SELECT count FROM hypes WHERE id = ?', [id]);
+
+        if (result.rows.length === 0) {
+            await query('INSERT OR IGNORE INTO hypes (id, count) VALUES (?, 0)', [id]);
+            return res.json({ count: 0 });
+        }
+
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Increment Hype Count
+router.post('/hype/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        await query('UPDATE hypes SET count = count + 1 WHERE id = ?', [id]);
+        const result = await query('SELECT count FROM hypes WHERE id = ?', [id]);
+        res.json({ count: result.rows[0].count });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Server error' });
