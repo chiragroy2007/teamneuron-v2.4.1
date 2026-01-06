@@ -1,4 +1,4 @@
-# Team Neuron - Dashboard (v2.1.4)
+# Team Neuron - Dashboard (v2.4.1)
 
 A high-performance research collaboration platform built for speed and scalability.
 
