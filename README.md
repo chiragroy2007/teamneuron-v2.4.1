@@ -1,6 +1,7 @@
 # Team Neuron - Dashboard (v2.4.1)
 
-A high-performance research collaboration platform built for speed and scalability.
+A high-performance research collaboration platform built for speed and scalability developed by Chirag
+
 
 ### Tech Stack & Efficiency
 - **Frontend**: React + Vite (Ultra-fast build & HMR), TailwindCSS (Zero-runtime styles), Shadcn/UI (Radix primitives).
